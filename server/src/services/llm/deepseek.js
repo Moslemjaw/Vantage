@@ -11,16 +11,19 @@ function deepseekHeaders() {
 
 export async function analyzeWithDeepSeek({ role, input, kuwaitSources }) {
   // DeepSeek is OpenAI-chat compatible for most deployments.
-  const url = 'https://api.deepseek.com/v1/chat/completions';
   const prompt = buildKuwaitRiskPrompt({ role, input, kuwaitSources });
+  return runDeepSeekJsonPrompt(prompt, 1300);
+}
 
+export async function runDeepSeekJsonPrompt(prompt, maxTokens = 1300) {
+  const url = 'https://api.deepseek.com/v1/chat/completions';
   const res = await fetch(url, {
     method: 'POST',
     headers: deepseekHeaders(),
     body: JSON.stringify({
       model: 'deepseek-chat',
       temperature: 0.2,
-      max_tokens: 1300,
+      max_tokens: maxTokens,
       messages: [
         { role: 'system', content: 'You output only strict JSON.' },
         { role: 'user', content: prompt },

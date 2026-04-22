@@ -46,3 +46,10 @@ export function requireAdmin(req, res, next) {
   return next();
 }
 
+export function requirePublisher(req, res, next) {
+  if (!req.auth) return res.status(401).json({ error: 'unauthorized' });
+  if (req.auth.role !== 'publisher' && req.auth.role !== 'admin') {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  return next();
+}

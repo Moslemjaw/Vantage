@@ -1,11 +1,41 @@
 import { News } from '../../models/News.js';
+import { User } from '../../models/User.js';
 import { fetchNewsDataLatest } from './newsdata.js';
+import { fetchGNewsLatest } from './gnews.js';
+import { markNewsFetchNow } from '../../lib/metrics.js';
 
 export async function syncNewsDataToDb({ q = 'kuwait', days = 7, createdByUserId }) {
-  if (!createdByUserId) throw new Error('createdByUserId required');
+  let actorUserId = createdByUserId;
+  if (!actorUserId) {
+    const anyUser = await User.findOne().select('_id');
+    if (anyUser) {
+      actorUserId = anyUser._id;
+    } else {
+      // Bootstraps a system actor so weekly sync works before first manual signup.
+      const systemEmail = 'system-news-bot@fine.local';
+      let systemUser = await User.findOne({ email: systemEmail }).select('_id');
+      if (!systemUser) {
+        systemUser = await User.create({
+          email: systemEmail,
+          name: 'System News Bot',
+          passwordHash: 'SYSTEM_MANAGED_NO_LOGIN',
+          role: 'admin',
+        });
+      }
+      actorUserId = systemUser._id;
+    }
+  }
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const fetched = await fetchNewsDataLatest({ q });
+  const [fetchedNewsData, fetchedGNews] = await Promise.all([
+    fetchNewsDataLatest({ q }),
+    fetchGNewsLatest(q, 15)
+  ]);
+  const fetched = [
+    ...fetchedNewsData.map(i => ({...i, provider: 'newsdata'})),
+    ...fetchedGNews.map(i => ({...i, provider: 'gnews'}))
+  ];
+  markNewsFetchNow();
   const items = fetched.filter((i) => i.publishedAt && i.publishedAt >= since && i.headline);
 
   let upserted = 0;
@@ -18,21 +48,25 @@ export async function syncNewsDataToDb({ q = 'kuwait', days = 7, createdByUserId
       continue;
     }
 
-    const update = {
-      externalProvider: 'newsdata',
-      externalId,
+    const setFields = {
       tag: it.tag || 'KUWAIT',
       source: it.source || 'NewsData',
       headline: (it.headline || '').slice(0, 240),
       body: (it.body || '').slice(0, 8000),
       url: it.url || '',
       publishedAt: it.publishedAt ?? new Date(),
-      createdByUserId,
+      createdByUserId: actorUserId,
     };
 
     const res = await News.updateOne(
-      { externalProvider: 'newsdata', externalId },
-      { $set: update, $setOnInsert: update },
+      { externalProvider: it.provider || 'newsdata', externalId },
+      {
+        $set: setFields,
+        $setOnInsert: {
+          externalProvider: it.provider || 'newsdata',
+          externalId,
+        },
+      },
       { upsert: true }
     );
 

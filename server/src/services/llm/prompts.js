@@ -50,6 +50,59 @@ ${input}
 `.trim();
 }
 
+export function buildInvestorSynthesisPrompt({
+  weekNewsInput,
+  deepseekView,
+  geminiView,
+  filters,
+}) {
+  return `
+You are a senior CIO-level Kuwait/GCC strategist.
+
+Goal:
+- Synthesize two expert model outputs and one weekly Kuwait/GCC news dataset into a single institutional-grade investor brief.
+- Be specific, critical, and transmission-driven (cause -> effect -> market impact).
+
+Return ONLY strict JSON in exactly this shape:
+{
+  "executiveConclusion": "3-6 sentences",
+  "keyPoints": ["5-10 bullets"],
+  "agentPerspectives": {
+    "political": "text",
+    "economic": "text",
+    "riskManager": "text",
+    "institutionalInvestor": "text"
+  },
+  "investmentView": {
+    "overallSignal": "Bullish | Bearish | Neutral | Mixed",
+    "confidence": "Low | Medium | High",
+    "overweight": "text",
+    "underweight": "text",
+    "avoid": "text",
+    "watchlist": "text"
+  },
+  "consensusView": "text",
+  "keyDisagreements": "text",
+  "primaryMarketDrivers": ["3-8 bullets"],
+  "majorRisks": ["3-8 bullets"],
+  "next7Days": "text",
+  "disclaimer": "Simulation-based analytical output, not financial advice."
+}
+
+WEEKLY_NEWS_DATASET:
+${weekNewsInput}
+
+DEEPSEEK_EXPERT_VIEW:
+${JSON.stringify(deepseekView)}
+
+GEMINI_EXPERT_VIEW:
+${JSON.stringify(geminiView)}
+
+SIMULATION_FILTERS:
+${JSON.stringify(filters)}
+`.trim();
+}
+
 export function safeJsonParseLoose(text) {
   if (!text || typeof text !== 'string') return null;
   const cleaned = text.trim().replace(/```json|```/g, '').trim();

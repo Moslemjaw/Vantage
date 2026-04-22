@@ -7,14 +7,14 @@ function getGeminiKey() {
 }
 
 export async function analyzeWithGemini({ role, input, kuwaitSources }) {
-  const key = getGeminiKey();
   const prompt = buildKuwaitRiskPrompt({ role, input, kuwaitSources });
+  return runGeminiJsonPrompt(prompt, 1400);
+}
 
-  // Gemini REST: Generative Language API
-  const model = 'gemini-1.5-pro';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-    key
-  )}`;
+export async function runGeminiJsonPrompt(prompt, maxOutputTokens = 1400) {
+  const key = getGeminiKey();
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -28,7 +28,7 @@ export async function analyzeWithGemini({ role, input, kuwaitSources }) {
       ],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 1400,
+        maxOutputTokens,
       },
     }),
   });
@@ -54,4 +54,3 @@ export async function analyzeWithGemini({ role, input, kuwaitSources }) {
   parsed.kuwaitSourcesUsed = Array.isArray(parsed.kuwaitSourcesUsed) ? parsed.kuwaitSourcesUsed : [];
   return parsed;
 }
-

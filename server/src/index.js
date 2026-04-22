@@ -9,6 +9,9 @@ import { authRouter } from './routes/auth.js';
 import { newsRouter } from './routes/news.js';
 import { articlesRouter } from './routes/articles.js';
 import { analysisRouter } from './routes/analysis.js';
+import { systemRouter } from './routes/system.js';
+import { debateRouter } from './routes/debate.js';
+import { adminRouter } from './routes/admin.js';
 
 const app = express();
 
@@ -27,6 +30,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/news', newsRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/analysis', analysisRouter);
+app.use('/api/system', systemRouter);
+app.use('/api/debate', debateRouter);
+app.use('/api/admin', adminRouter);
 
 const port = Number(process.env.PORT ?? 8080);
 
@@ -34,4 +40,3 @@ await connectDb();
 app.listen(port, () => {
   console.log(`[server] listening on http://localhost:${port}`);
 });
-
