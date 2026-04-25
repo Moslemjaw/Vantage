@@ -181,10 +181,10 @@ export default function NewsPage({ me }) {
     } catch {}
   }, []);
 
-  const loadPage = useCallback(async (p = page) => {
+  const loadPage = useCallback(async (p = page, forceSync = false) => {
     setLoading(true);
     try {
-      const d = await api(`/api/news/weekly?page=${p}&pageSize=12&autoSync=${p === 1 ? '1' : '0'}`);
+      const d = await api(`/api/news/weekly?page=${p}&pageSize=12&autoSync=${p === 1 ? '1' : '0'}${forceSync ? '&forceSync=1' : ''}`);
       setItems(d.items ?? []);
       setPage(d.page ?? 1);
       setTotalPages(d.totalPages ?? 1);
@@ -247,7 +247,7 @@ export default function NewsPage({ me }) {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border border-cyan-500/20 text-[11px] text-cyan-400 hover:from-cyan-500/20 hover:to-violet-500/20 hover:text-white transition-all">
                 <FileText size={11} />Export PDF
               </button>
-              <button onClick={() => { loadStats(); loadPage(page); }} disabled={loading}
+              <button onClick={() => { loadStats(); loadPage(1, true); }} disabled={loading}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] text-white/60 hover:text-white hover:bg-white/10 transition-all disabled:opacity-40">
                 <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />Refresh
               </button>

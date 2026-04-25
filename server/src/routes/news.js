@@ -16,13 +16,18 @@ newsRouter.get('/weekly', async (req, res) => {
   const pageSize = Math.max(1, Math.min(20, Number(req.query.pageSize ?? 8) || 8));
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const autoSync = String(req.query.autoSync ?? '1') !== '0';
+  const forceSync = String(req.query.forceSync ?? '0') === '1';
 
   try {
     const count = await News.countDocuments({ publishedAt: { $gte: since } });
 
-    // Keep live-week DB populated — sync when below threshold
-    if (autoSync && count < pageSize * 2 && process.env.NEWSDATA_API_KEY) {
+    // Keep live-week DB populated — sync when below threshold OR manually forced
+    if ((forceSync || (autoSync && count < pageSize * 2)) && process.env.NEWSDATA_API_KEY) {
       await syncNewsDataToDb({ q: 'kuwait', days: 7 });
+      if (forceSync) {
+        // Automatically analyze the newly fetched articles so they show up as AI analyzed immediately
+        await analyzeUnanalyzedNews(15);
+      }
     }
 
     const total = await News.countDocuments({ publishedAt: { $gte: since } });
