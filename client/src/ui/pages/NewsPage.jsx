@@ -223,14 +223,14 @@ export default function NewsPage({ me }) {
         className="glass-card !p-0 overflow-hidden"
       >
         <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-100 to-violet-100 flex items-center justify-center border border-cyan-200">
                 <BarChart3 size={16} className="text-cyan-600" />
               </div>
               Market Intelligence
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button onClick={() => generateNewsReportPDF(stats, items)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-50 to-violet-50 border border-cyan-200 text-[11px] text-cyan-600 hover:from-cyan-100 hover:to-violet-100 transition-all">
                 <FileText size={11} />Export PDF
@@ -242,7 +242,7 @@ export default function NewsPage({ me }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-center">
               <p className="text-[9px] text-slate-400 uppercase tracking-wider mb-1.5">Articles</p>
               <p className="text-3xl font-mono font-black text-cyan-600">{stats.total}</p>
@@ -263,7 +263,7 @@ export default function NewsPage({ me }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-5 border border-slate-100 relative overflow-hidden shadow-sm">
               <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-20" style={{
                 background: `radial-gradient(circle, ${gaugeScore > 60 ? 'rgba(16,185,129,0.4)' : gaugeScore < 40 ? 'rgba(244,63,94,0.4)' : 'rgba(245,158,11,0.4)'}, transparent 70%)`
@@ -349,7 +349,7 @@ export default function NewsPage({ me }) {
               <p className="text-[9px] text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1">
                 <Layers size={9} />Sector Distribution
               </p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {stats.topSectors.map((sec) => (
                   <div key={sec.name}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl bg-gradient-to-r border ${getSectorStyle(sec.name)}`}>
@@ -365,7 +365,7 @@ export default function NewsPage({ me }) {
         </div>
       </motion.div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <Newspaper size={18} className="text-cyan-500" />Market Intelligence Feed
