@@ -332,7 +332,9 @@ export function generateWarRoomPDF(debate) {
 
   // ─── Agent Transcripts ───
   if (debate.messages?.length) {
-    y = checkPage(doc, y, 20);
+    // Always start transcripts on a new page
+    y = newPage(doc);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...COLORS.text);
