@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Activity, Lock, KeyRound } from 'lucide-react';
 
 import { MarketSentimentProvider } from './contexts/MarketSentimentContext.jsx';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext.jsx';
