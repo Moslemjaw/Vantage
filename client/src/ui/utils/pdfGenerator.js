@@ -6,6 +6,20 @@ import jsPDF from 'jspdf';
  */
 
 const COLORS = {
+  bg: [248, 250, 252],
+  headerBg: [255, 255, 255],
+  cardBg: [255, 255, 255],
+  cyan: [34, 211, 238],
+  violet: [167, 139, 250],
+  emerald: [16, 185, 129],
+  rose: [244, 63, 94],
+  amber: [245, 158, 11],
+  white: [255, 255, 255],
+  textPrimary: [15, 23, 42],
+  textSecondary: [71, 85, 105],
+  textMuted: [148, 163, 184],
+  border: [226, 232, 240],
+  watermark: [226, 232, 240],
 };
 
 function drawWatermark(doc) {
