@@ -56,6 +56,10 @@ const AGENT_THEMES = {
   'Real Estate Analyst': { color: '#8b5cf6', bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', icon: Layers,         gradFrom: 'from-violet-500', gradTo: 'to-purple-500' },
   'GCC Macro Strategist': { color: '#06b6d4', bg: 'bg-cyan-50',  border: 'border-cyan-200',  text: 'text-cyan-700',   icon: Activity,       gradFrom: 'from-cyan-500',   gradTo: 'to-sky-500' },
   'Risk Manager':       { color: '#ef4444', bg: 'bg-rose-50',   border: 'border-rose-200',  text: 'text-rose-700',   icon: Shield,         gradFrom: 'from-rose-500',   gradTo: 'to-red-500' },
+  'Sharia Compliance':  { color: '#059669', bg: 'bg-green-50',  border: 'border-green-200', text: 'text-green-700',  icon: Shield,         gradFrom: 'from-green-500',  gradTo: 'to-emerald-600' },
+  'Energy Specialist':  { color: '#ea580c', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', icon: Zap,            gradFrom: 'from-orange-500', gradTo: 'to-amber-500' },
+  'Sovereign Wealth (KIA)': { color: '#0284c7', bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-700', icon: Star,           gradFrom: 'from-sky-500',    gradTo: 'to-blue-600' },
+  'GCC Comparator':     { color: '#7c3aed', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', icon: Activity,    gradFrom: 'from-purple-500', gradTo: 'to-fuchsia-500' },
 };
 
 const DEBATE_PHASES = {
@@ -511,6 +515,28 @@ export default function AgentArenaPage({ me }) {
   });
   const [showWeights, setShowWeights] = useState(false);
 
+  const [followUpAgent, setFollowUpAgent] = useState(1);
+  const [followUpQ, setFollowUpQ] = useState('');
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+  const [followUpResponses, setFollowUpResponses] = useState([]);
+
+  const ALL_AGENTS = [
+    { name: 'Retail Sentiment', icon: '🛒', default: true },
+    { name: 'Institutional PM', icon: '🏦', default: true },
+    { name: 'Dividend Strategist', icon: '💰', default: true },
+    { name: 'Real Estate Analyst', icon: '🏗️', default: true },
+    { name: 'GCC Macro Strategist', icon: '🌍', default: true },
+    { name: 'Risk Manager', icon: '⚠️', default: true },
+    { name: 'Sharia Compliance', icon: '☪️', default: false },
+    { name: 'Energy Specialist', icon: '⛽', default: false },
+    { name: 'Sovereign Wealth (KIA)', icon: '🏛️', default: false },
+    { name: 'GCC Comparator', icon: '📊', default: false },
+  ];
+
+  const [enabledAgents, setEnabledAgents] = useState(
+    ALL_AGENTS.filter(a => a.default).map(a => a.name)
+  );
+
   const LOADING_STEPS = [
     { text: 'Gathering latest Kuwait & Middle East news...', icon: '📰' },
     { text: 'Fetching live Boursa Kuwait market data...', icon: '📊' },
@@ -538,6 +564,21 @@ export default function AgentArenaPage({ me }) {
     return () => clearInterval(iv);
   }, [running]);
 
+  async function askFollowUp() {
+    if (!followUpQ.trim() || !result?.sessionId) return;
+    setFollowUpLoading(true);
+    try {
+      const data = await api(`/api/debate/${result.sessionId}/followup`, {
+        method: 'POST',
+        body: JSON.stringify({ agentId: followUpAgent, question: followUpQ }),
+      });
+      setFollowUpResponses(prev => [...prev, data.message]);
+      setFollowUpQ('');
+    } catch (e) {
+      setErr(e.message || 'Follow-up failed.');
+    } finally { setFollowUpLoading(false); }
+  }
+
   async function launch() {
     setErr(''); setRunning(true); setResult(null); setLoadingStep(0); setActiveView('agents');
     try {
@@ -548,7 +589,8 @@ export default function AgentArenaPage({ me }) {
           sectorFocus: sector,
           timeHorizon,
           countryFocus: 'Kuwait',
-          agentWeights
+          agentWeights,
+          enabledAgents,
         }),
       });
       setResult(d);
@@ -577,7 +619,7 @@ export default function AgentArenaPage({ me }) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800">AI Agent Arena</h2>
-              <p className="text-xs text-slate-400">6 specialized AI agents debate live news impact on Boursa Kuwait</p>
+              <p className="text-xs text-slate-400">{enabledAgents.length} specialized AI agents debate live news impact on Boursa Kuwait</p>
             </div>
           </div>
 
@@ -678,6 +720,32 @@ export default function AgentArenaPage({ me }) {
             </div>
 
           </div>
+        </div>
+
+        {/* Agent Selection */}
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          {ALL_AGENTS.map(agent => {
+            const isOn = enabledAgents.includes(agent.name);
+            const theme = getTheme(agent.name);
+            return (
+              <button
+                key={agent.name}
+                onClick={() => {
+                  setEnabledAgents(prev =>
+                    isOn ? prev.filter(n => n !== agent.name) : [...prev, agent.name]
+                  );
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-200 ${
+                  isOn
+                    ? `${theme.bg} ${theme.border} ${theme.text} shadow-sm`
+                    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                }`}
+              >
+                <span>{agent.icon}</span>
+                <span>{agent.name}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Agent roster preview */}
@@ -866,6 +934,68 @@ export default function AgentArenaPage({ me }) {
             <ConsensusVerdict consensus={result.consensusReport} messages={result.messages} />
           )}
         </>
+      )}
+
+      {/* Follow-Up Questions */}
+      {result && !running && (
+        <div className="glass-card">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare size={18} className="text-violet-500" />
+            <h3 className="text-sm font-bold text-slate-700">Ask a Follow-Up Question</h3>
+          </div>
+          <div className="flex gap-3">
+            <select
+              value={followUpAgent}
+              onChange={e => setFollowUpAgent(Number(e.target.value))}
+              className="h-11 bg-white border border-slate-200 rounded-xl px-3 text-sm font-medium text-slate-700 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 cursor-pointer appearance-none"
+            >
+              {result.messages?.map(m => (
+                <option key={m.agentId} value={m.agentId}>{m.agentName}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={followUpQ}
+              onChange={e => setFollowUpQ(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && askFollowUp()}
+              placeholder="Ask any agent a follow-up question..."
+              className="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-4 text-sm text-slate-700 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 placeholder:text-slate-300"
+            />
+            <button
+              onClick={askFollowUp}
+              disabled={!followUpQ.trim() || followUpLoading}
+              className="h-11 px-5 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-500 text-white text-sm font-bold disabled:opacity-40 hover:shadow-lg hover:shadow-violet-500/25 transition-all flex items-center gap-2"
+            >
+              {followUpLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <ArrowRight size={16} />
+              )}
+              Ask
+            </button>
+          </div>
+          {followUpResponses.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {followUpResponses.map((fu, i) => {
+                const theme = getTheme(fu.agentName);
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-4 rounded-xl border ${theme.border} ${theme.bg}`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-xs font-bold ${theme.text}`}>{fu.agentName}</span>
+                      <span className="text-[10px] text-slate-400">Follow-up Response</span>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed">{fu.content}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

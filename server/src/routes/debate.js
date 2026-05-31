@@ -71,6 +71,46 @@ Your tone: Bold, forward-looking, macro-first. You connect global commodity move
 - Scenario analysis: bull/base/bear with probability weights and specific trigger events
 Your tone: Contrarian, rigorous, skeptical. You are the one who prevented the fund from buying before the crash.`,
     temperature: 0.25 },
+  { id: 7, name: 'Sharia Compliance', provider: 'deepseek', role: 'sharia',
+    brief: `You are the Sharia Compliance Analyst for Kuwait & GCC investments. Your expertise:
+- Screen stocks against AAOIFI Sharia standards (debt/asset ratio < 30%, impure income < 5%)
+- Track sukuk issuance pipeline and secondary market yields across GCC
+- Monitor KFH, Boubyan Bank, Warba Bank as Sharia-compliant bellwethers
+- Flag conventional banking exposure risks for Islamic fund managers
+- Compare Islamic vs conventional banking NIM spreads as rate cycle indicators
+- Evaluate takaful (Islamic insurance) sector growth and pricing dynamics
+Your tone: Methodical, compliance-focused, and precise. You always anchor to AAOIFI standards and cite specific compliance thresholds.`,
+    temperature: 0.3 },
+  { id: 8, name: 'Energy Specialist', provider: 'deepseek', role: 'energy',
+    brief: `You are the dedicated Energy Sector Specialist for Kuwait markets. Your expertise:
+- KPC subsidiary analysis: KNPC, PIC, KOTC revenue and capex cycles
+- OPEC+ quota compliance tracking and its impact on listed energy service companies
+- Kuwait's 2040 energy strategy: downstream expansion, clean energy pivot, LNG import terminal
+- Petrochemical cycle tracking: ethylene, polyethylene, urea margins and capacity utilization
+- Oil field services sector: drilling activity, maintenance cycles, contractor margins
+- Energy subsidy reform timeline and second-order impact on consumer and transport stocks
+Your tone: Technical, commodity-cycle aware, and forward-looking. You always connect oil price moves to specific Kuwait fiscal and corporate revenue impacts.`,
+    temperature: 0.5 },
+  { id: 9, name: 'Sovereign Wealth (KIA)', provider: 'deepseek', role: 'sovereign',
+    brief: `You are the Sovereign Wealth Fund Perspective analyst, modeling how KIA (Kuwait Investment Authority) thinks. Your expertise:
+- KIA's known allocation philosophy: long-term, diversified, counter-cyclical value investing
+- Track government stake management in key listed companies (KIPCO, Zain, NBK, KFH)
+- Model FGF (Future Generations Fund) drawdown scenarios and their impact on market liquidity
+- Interpret KIA-linked board appointments and strategic directives as investment signals
+- Compare Kuwait's sovereign wealth strategy vs ADIA (Abu Dhabi), PIF (Saudi), QIA (Qatar)
+- Analyze privatization pipeline and IPO candidates from government-linked entities
+Your tone: Patient, long-term oriented, and strategic. You represent the 30-year view and often disagree with short-term traders.`,
+    temperature: 0.4 },
+  { id: 10, name: 'GCC Comparator', provider: 'deepseek', role: 'regional',
+    brief: `You are the GCC Regional Comparator, contextualizing Kuwait's market moves relative to Saudi, UAE, and Qatar. Your expertise:
+- Cross-listed stock arbitrage opportunities across GCC exchanges
+- Relative valuation analysis: Kuwait P/E, P/B vs Tadawul, DFM, ADX, QSE benchmarks
+- Capital flow rotation patterns: when Saudi rallies, does Kuwait lag or follow?
+- MSCI/FTSE index rebalancing cross-GCC effects and passive flow estimation
+- GCC customs union, trade flow, and regulatory convergence impacts
+- Regional sector comparisons: Kuwait banks vs Saudi banks, Kuwait telecom vs UAE telecom
+Your tone: Comparative, data-heavy, and benchmark-aware. You always ask 'is this a Kuwait story or a GCC-wide story?'`,
+    temperature: 0.5 },
 ];
 
 // Max tokens per agent response — increased for depth
@@ -161,6 +201,7 @@ const StartDebateSchema = z.object({
   timeHorizon: z.string().default('Short-term (1-4 weeks)'),
   countryFocus: z.string().default('GCC (All)'),
   agentWeights: z.record(z.string(), z.number()).optional(),
+  enabledAgents: z.array(z.string()).optional(),
 });
 
 debateRouter.post('/start', requireAuth, async (req, res) => {
@@ -170,7 +211,7 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'invalid_input', details: parsed.error.errors });
   }
 
-  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights } = parsed.data;
+  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights, enabledAgents } = parsed.data;
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
   const query = { publishedAt: { $gte: since } };
@@ -214,6 +255,9 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
   // Add simulation context
   newsContext = `=== DEBATE PARAMETERS ===\nMarket Bias: ${marketBias}\nSector Focus: ${sectorFocus}\nTime Horizon: ${timeHorizon}\nCountry Focus: ${countryFocus}\n\n` + newsContext;
 
+  // CBK Policy Data (semi-static)
+  newsContext = `=== CBK MONETARY POLICY ===\nDiscount Rate: 4.00% (held since Mar 2026)\nRepo Rate: 4.25%\nKWD/USD Peg: 0.3065 (basket-weighted)\nNext CBK Meeting: TBD\nPolicy Stance: Neutral — monitoring global rate cycle\n\n` + newsContext;
+
   const session = await DebateSession.create({
     userId: req.auth.sub,
     trigger: newsItems[0]?.headline || 'Market Analysis',
@@ -221,21 +265,23 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     messages: [],
   });
 
-  /* ── Turn-Based Debate Protocol ── */
-  /*
-    Phase 1 - THE CATALYST: Agent 5 (GCC Macro) or Agent 1 (Retail) starts based on news
-    Phase 2 - DISCUSSION: Agents 3, 4, 2 each respond
-    Phase 3 - THE CHALLENGE: Agent 6 (Risk Manager) counter-argues
-    Phase 4 - THE VERDICT: Agent 2 (Institutional) provides final outlook
-  */
-  const debateOrder = [
-    { agent: AGENTS[4], phase: 'catalyst' },   // Agent 5 - GCC Macro starts
-    { agent: AGENTS[0], phase: 'discuss' },     // Agent 1 - Retail responds
-    { agent: AGENTS[2], phase: 'discuss' },     // Agent 3 - Dividend weighs in
-    { agent: AGENTS[3], phase: 'discuss' },     // Agent 4 - Real Estate adds context
-    { agent: AGENTS[5], phase: 'challenge' },   // Agent 6 - Risk Manager challenges
-    { agent: AGENTS[1], phase: 'verdict' },     // Agent 2 - Institutional final verdict
-  ];
+  /* ── Dynamic Turn-Based Debate Protocol ── */
+  const activeAgents = enabledAgents && enabledAgents.length > 0
+    ? AGENTS.filter(a => enabledAgents.includes(a.name))
+    : AGENTS.filter(a => a.id <= 6); // default original 6
+
+  if (activeAgents.length === 0) {
+    return res.status(400).json({ error: 'no_agents_selected' });
+  }
+
+  // Build debate order with phase assignment
+  const debateOrder = activeAgents.map((agent, idx) => {
+    let phase = 'discuss';
+    if (idx === 0) phase = 'catalyst';
+    else if (agent.role === 'risk') phase = 'challenge';
+    else if (idx === activeAgents.length - 1) phase = 'verdict';
+    return { agent, phase };
+  });
 
   const messages = [];
 
@@ -353,6 +399,32 @@ Generate a consensus report as ONLY valid JSON:
   session.status = 'completed';
   await session.save();
 
+  // ── Extract Predictions ──
+  try {
+    const { Prediction } = await import('../models/Prediction.js');
+    const timeframeDays = timeHorizon.includes('1-4 weeks') ? 28
+      : timeHorizon.includes('1-3 months') ? 90
+      : timeHorizon.includes('3-12 months') ? 270 : 30;
+    const resolveBy = new Date(Date.now() + timeframeDays * 24 * 60 * 60 * 1000);
+
+    const predictions = messages.map(m => ({
+      debateSessionId: session._id,
+      userId: req.auth.sub,
+      agentId: m.agentId,
+      agentName: m.agentName,
+      direction: m.sentiment,
+      confidence: m.confidence,
+      keyPoint: m.keyPoint || '',
+      timeframe: timeHorizon,
+      resolveBy,
+      status: 'pending',
+    }));
+
+    await Prediction.insertMany(predictions);
+  } catch (predErr) {
+    console.error('[debate] Prediction extraction error:', predErr.message);
+  }
+
   return res.json({
     sessionId: session._id,
     trigger: session.trigger,
@@ -360,6 +432,61 @@ Generate a consensus report as ONLY valid JSON:
     consensusReport,
     marketImpactRating,
   });
+});
+
+debateRouter.post('/:id/followup', requireAuth, async (req, res) => {
+  try {
+    const { agentId, question } = req.body;
+    if (!question) return res.status(400).json({ error: 'question_required' });
+
+    const session = await DebateSession.findById(req.params.id);
+    if (!session) return res.status(404).json({ error: 'not_found' });
+
+    const agent = AGENTS.find(a => a.id === agentId) || AGENTS[0];
+
+    const transcript = session.messages.map(m =>
+      `[${m.agentName}]: ${m.content}`
+    ).join('\n\n');
+
+    const prompt = `
+${agent.brief}
+
+You previously participated in a multi-agent debate. Here is the full transcript:
+
+${transcript}
+
+The user is now asking you a follow-up question:
+"${question}"
+
+Respond with ONLY valid JSON:
+{
+  "analysis": "Your detailed response to the user's question, referencing your earlier debate points and any relevant data. Be specific, cite evidence, and provide actionable insight.",
+  "sentiment": "Bullish" or "Bearish" or "Neutral",
+  "confidence": 50
+}
+`.trim();
+
+    const result = await runDeepSeekJsonPrompt(prompt, AGENT_MAX_TOKENS);
+
+    const followupMsg = {
+      agentId: agent.id,
+      agentName: agent.name,
+      provider: agent.provider,
+      role: agent.role,
+      content: result.analysis || JSON.stringify(result),
+      sentiment: ['Bullish', 'Bearish', 'Neutral'].includes(result.sentiment) ? result.sentiment : 'Neutral',
+      confidence: Math.min(100, Math.max(0, Number(result.confidence) || 50)),
+      timestamp: new Date(),
+    };
+
+    session.messages.push(followupMsg);
+    await session.save();
+
+    return res.json({ message: followupMsg });
+  } catch (err) {
+    console.error('[debate] followup error:', err.message);
+    return res.status(500).json({ error: 'followup_failed' });
+  }
 });
 
 debateRouter.get('/history', requireAuth, async (req, res) => {
