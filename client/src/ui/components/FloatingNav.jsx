@@ -47,8 +47,6 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
         setProfileOpen(false);
         setShowProfile(false);
       }
-        setShowProfile(false);
-      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
