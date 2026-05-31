@@ -261,10 +261,10 @@ function GlobalLock({ onUnlock }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[100px] top-[-100px] left-[-100px]" />
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-violet-500/10 blur-[80px] bottom-[-50px] right-[-50px]" />
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-500/5 blur-[100px] top-[-100px] left-[-100px]" />
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-violet-500/5 blur-[80px] bottom-[-50px] right-[-50px]" />
       </div>
       
       <motion.div 
@@ -272,23 +272,23 @@ function GlobalLock({ onUnlock }) {
         animate={{ opacity: 1, scale: 1, y: 0 }} 
         className="relative z-10 w-full max-w-sm p-8"
       >
-        <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 p-8 rounded-3xl shadow-2xl">
+        <div className="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/20">
             <Lock className="text-white" size={32} />
           </div>
           
-          <h2 className="text-2xl font-bold text-center text-white mb-2">Restricted Access</h2>
-          <p className="text-center text-slate-400 text-sm mb-8">Please enter the security password to proceed.</p>
+          <h2 className="text-2xl font-bold text-center text-slate-900 mb-2">Restricted Access</h2>
+          <p className="text-center text-slate-500 text-sm mb-8">Please enter the security password to proceed.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="password"
                 value={pwd}
                 onChange={(e) => setPwd(e.target.value)}
                 placeholder="Password"
-                className={`w-full bg-slate-900/50 border ${error ? 'border-rose-500' : 'border-slate-700'} rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all`}
+                className={`w-full bg-slate-50 border ${error ? 'border-rose-500' : 'border-slate-200'} rounded-xl py-3 pl-12 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all`}
                 autoFocus
               />
             </div>
@@ -301,7 +301,7 @@ function GlobalLock({ onUnlock }) {
 
             <button
               type="submit"
-              className="w-full bg-white text-slate-900 font-bold rounded-xl py-3 hover:bg-slate-100 transition-colors shadow-lg"
+              className="w-full bg-slate-900 text-white font-bold rounded-xl py-3 hover:bg-slate-800 transition-colors shadow-md"
             >
               Unlock
             </button>
