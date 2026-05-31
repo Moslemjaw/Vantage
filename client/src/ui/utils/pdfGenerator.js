@@ -147,6 +147,73 @@ export function generateWarRoomPDF(debate) {
   doc.line(15, y, 195, y);
   y += 8;
 
+  // ─── Agent Scoreboard ───
+  if (debate.consensusReport?.agentScores?.length) {
+    y = checkPage(doc, y, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.text);
+    doc.text('Agent Scoreboard', 15, y);
+    y += 8;
+
+    const winner = debate.consensusReport.winnerAgent;
+    
+    debate.consensusReport.agentScores.forEach(scoreObj => {
+      y = checkPage(doc, y, 10);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      const isWinner = scoreObj.agentName === winner;
+      doc.setTextColor(isWinner ? ...COLORS.amber : ...COLORS.text);
+      doc.text(scoreObj.agentName + (isWinner ? ' (Top Analyst)' : ''), 15, y);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text(String(scoreObj.score || 0), 195, y, { align: 'right' });
+      
+      y += 3;
+      
+      doc.setFillColor(...COLORS.border);
+      doc.rect(15, y, 180, 2, 'F');
+      
+      const width = Math.min((scoreObj.score || 0) / 100 * 180, 180);
+      if (width > 0) {
+        doc.setFillColor(isWinner ? ...COLORS.amber : ...COLORS.cyan);
+        doc.rect(15, y, width, 2, 'F');
+      }
+      
+      y += 6;
+    });
+    
+    doc.setDrawColor(...COLORS.border);
+    doc.line(15, y, 195, y);
+    y += 8;
+  }
+
+  // ─── Market Impact Score ───
+  if (debate.marketImpactRating != null) {
+    y = checkPage(doc, y, 20);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.textMuted);
+    doc.text('MARKET IMPACT SCORE', 15, y);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...COLORS.text);
+    doc.text(`${debate.marketImpactRating}/10`, 195, y, { align: 'right' });
+    y += 4;
+    
+    doc.setFillColor(...COLORS.border);
+    doc.rect(15, y, 180, 3, 'F');
+    const width = Math.min((debate.marketImpactRating / 10) * 180, 180);
+    if (width > 0) {
+      doc.setFillColor(...COLORS.rose);
+      doc.rect(15, y, width, 3, 'F');
+    }
+    y += 10;
+  }
+
   // ─── Consensus Summary ───
   if (debate.consensusReport) {
     const cr = debate.consensusReport;
