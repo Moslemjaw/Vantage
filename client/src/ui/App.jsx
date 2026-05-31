@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+<<<<<<< HEAD
+import { Activity, Lock, KeyRound } from 'lucide-react';
+=======
 import { Activity } from 'lucide-react';
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
 
 import { MarketSentimentProvider } from './contexts/MarketSentimentContext.jsx';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext.jsx';
@@ -50,6 +54,10 @@ const PARTICLE_SEED = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 export default function App() {
+<<<<<<< HEAD
+  const [isUnlocked, setIsUnlocked] = useState(localStorage.getItem('site_unlocked') === 'true');
+=======
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   const [tab, setTab] = useState('stocks');
   const [me, setMe] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -87,6 +95,13 @@ export default function App() {
     }
   }, [tab, me]);
 
+<<<<<<< HEAD
+  if (!isUnlocked) {
+    return <GlobalLock onUnlock={() => setIsUnlocked(true)} />;
+  }
+
+=======
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center overflow-hidden bg-slate-50">
@@ -239,3 +254,73 @@ function AppInner({ me, tab, setTab, handleLogout, showAuth, setShowAuth, showAd
     </MarketSentimentProvider>
   );
 }
+<<<<<<< HEAD
+
+function GlobalLock({ onUnlock }) {
+  const [pwd, setPwd] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (pwd === 'Habusha2006') {
+      localStorage.setItem('site_unlocked', 'true');
+      onUnlock();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[100px] top-[-100px] left-[-100px]" />
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-violet-500/10 blur-[80px] bottom-[-50px] right-[-50px]" />
+      </div>
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        className="relative z-10 w-full max-w-sm p-8"
+      >
+        <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700 p-8 rounded-3xl shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/20">
+            <Lock className="text-white" size={32} />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-center text-white mb-2">Restricted Access</h2>
+          <p className="text-center text-slate-400 text-sm mb-8">Please enter the security password to proceed.</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                type="password"
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                placeholder="Password"
+                className={`w-full bg-slate-900/50 border ${error ? 'border-rose-500' : 'border-slate-700'} rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all`}
+                autoFocus
+              />
+            </div>
+            
+            {error && (
+              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-rose-500 text-xs text-center font-medium">
+                Incorrect password
+              </motion.p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-white text-slate-900 font-bold rounded-xl py-3 hover:bg-slate-100 transition-colors shadow-lg"
+            >
+              Unlock
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+=======
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a

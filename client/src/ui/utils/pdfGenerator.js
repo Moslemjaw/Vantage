@@ -6,6 +6,22 @@ import jsPDF from 'jspdf';
  */
 
 const COLORS = {
+<<<<<<< HEAD
+  bg: [248, 250, 252],
+  headerBg: [255, 255, 255],
+  cardBg: [255, 255, 255],
+  cyan: [34, 211, 238],
+  violet: [167, 139, 250],
+  emerald: [16, 185, 129],
+  rose: [244, 63, 94],
+  amber: [245, 158, 11],
+  white: [255, 255, 255],
+  textPrimary: [15, 23, 42],
+  textSecondary: [71, 85, 105],
+  textMuted: [148, 163, 184],
+  border: [226, 232, 240],
+  watermark: [241, 245, 249],
+=======
   midnight: [10, 15, 28],
   darkBg: [15, 23, 42],
   cardBg: [30, 41, 59],
@@ -20,6 +36,7 @@ const COLORS = {
   textMuted: [100, 116, 139],
   border: [51, 65, 85],
   watermark: [20, 29, 50],
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
 };
 
 function drawWatermark(doc) {
@@ -32,8 +49,12 @@ function drawWatermark(doc) {
 }
 
 function drawGradientHeader(doc) {
+<<<<<<< HEAD
+  doc.setFillColor(...COLORS.headerBg);
+=======
   // Deep dark header background
   doc.setFillColor(...COLORS.midnight);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.rect(0, 0, 210, 50, 'F');
 
   // Gradient accent line (top edge)
@@ -49,7 +70,11 @@ function drawGradientHeader(doc) {
   // Logo area
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(26);
+<<<<<<< HEAD
+  doc.setTextColor(...COLORS.textPrimary);
+=======
   doc.setTextColor(...COLORS.white);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.text('VANTAGE', 15, 25);
 
   doc.setFont('helvetica', 'normal');
@@ -58,11 +83,19 @@ function drawGradientHeader(doc) {
   doc.text('AI FINANCIAL TERMINAL  |  INTELLIGENCE DIVISION', 15, 32);
 
   // Security Classification Badge
+<<<<<<< HEAD
+  doc.setFillColor(254, 226, 226); // rose-100
+  doc.roundedRect(15, 38, 30, 5, 1, 1, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.setTextColor(...COLORS.rose);
+=======
   doc.setFillColor(...COLORS.rose);
   doc.roundedRect(15, 38, 30, 5, 1, 1, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6);
   doc.setTextColor(...COLORS.white);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.text('CLASSIFIED', 30, 41.5, { align: 'center' });
 
   // Report Date & Time
@@ -73,13 +106,26 @@ function drawGradientHeader(doc) {
   doc.text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 195, 25, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
+<<<<<<< HEAD
+  doc.setTextColor(...COLORS.textPrimary);
+  doc.text(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), 195, 33, { align: 'right' });
+  
+  // Bottom border for header
+  doc.setFillColor(...COLORS.border);
+  doc.rect(0, 50, 210, 0.5, 'F');
+=======
   doc.setTextColor(...COLORS.white);
   doc.text(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), 195, 33, { align: 'right' });
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
 }
 
 function drawFooter(doc, pageNum, totalPages) {
   const y = 285;
+<<<<<<< HEAD
+  doc.setFillColor(...COLORS.headerBg);
+=======
   doc.setFillColor(...COLORS.midnight);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.rect(0, y - 5, 210, 17, 'F');
 
   // Subtle accent line
@@ -121,7 +167,11 @@ function drawKPI(doc, x, y, label, value, color = COLORS.cyan) {
   doc.text(String(value), x + 21, y + 13, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
+<<<<<<< HEAD
+  doc.setTextColor(...COLORS.textSecondary);
+=======
   doc.setTextColor(...COLORS.textMuted);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.text(label.toUpperCase(), x + 21, y + 19, { align: 'center' });
 }
 
@@ -163,7 +213,11 @@ export function generateWarRoomPDF(debate) {
   const pw = 180; // page width minus margins
 
   // Initialize Page 1
+<<<<<<< HEAD
+  doc.setFillColor(...COLORS.bg);
+=======
   doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.rect(0, 0, 210, 297, 'F');
   drawWatermark(doc);
   drawGradientHeader(doc);
@@ -173,7 +227,11 @@ export function generateWarRoomPDF(debate) {
   // Report Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
+<<<<<<< HEAD
+  doc.setTextColor(...COLORS.textPrimary);
+=======
   doc.setTextColor(...COLORS.white);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.text('Multi-Agent Debate Analysis', 15, curY);
   curY += 10;
 
@@ -197,7 +255,11 @@ export function generateWarRoomPDF(debate) {
   drawKPI(doc, 15, curY, 'Status', debate.status?.toUpperCase() || 'N/A', isCompleted ? COLORS.emerald : COLORS.amber);
   drawKPI(doc, 60, curY, 'Impact Score', `${debate.marketImpactRating || '?'}/10`, COLORS.rose);
   drawKPI(doc, 105, curY, 'Total Agents', debate.messages?.length || 0, COLORS.violet);
+<<<<<<< HEAD
+  drawKPI(doc, 150, curY, 'Date', debate.createdAt ? new Date(debate.createdAt).toLocaleDateString() : 'N/A', COLORS.textPrimary);
+=======
   drawKPI(doc, 150, curY, 'Date', debate.createdAt ? new Date(debate.createdAt).toLocaleDateString() : 'N/A', COLORS.white);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   curY += 32;
 
   // Consensus Report
@@ -231,7 +293,11 @@ export function generateWarRoomPDF(debate) {
         if (curY > 265) {
           drawFooter(doc, doc.getNumberOfPages(), '?');
           doc.addPage();
+<<<<<<< HEAD
+          doc.setFillColor(...COLORS.bg);
+=======
           doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
           doc.rect(0, 0, 210, 297, 'F');
           drawWatermark(doc);
           curY = 20;
@@ -250,7 +316,11 @@ export function generateWarRoomPDF(debate) {
     if (curY > 230) {
       drawFooter(doc, doc.getNumberOfPages(), '?');
       doc.addPage();
+<<<<<<< HEAD
+      doc.setFillColor(...COLORS.bg);
+=======
       doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
       doc.rect(0, 0, 210, 297, 'F');
       drawWatermark(doc);
       curY = 20;
@@ -278,7 +348,11 @@ export function generateWarRoomPDF(debate) {
       if (curY + cardHeight > 270) {
         drawFooter(doc, doc.getNumberOfPages(), '?');
         doc.addPage();
+<<<<<<< HEAD
+        doc.setFillColor(...COLORS.bg);
+=======
         doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
         doc.rect(0, 0, 210, 297, 'F');
         drawWatermark(doc);
         curY = 20;
@@ -294,7 +368,11 @@ export function generateWarRoomPDF(debate) {
       doc.roundedRect(20, curY + 4, 6, 6, 1, 1, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6);
+<<<<<<< HEAD
+      doc.setTextColor(...COLORS.white);
+=======
       doc.setTextColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
       const initial = (msg.agentName || 'A').charAt(0).toUpperCase();
       doc.text(initial, 23, curY + 8, { align: 'center' });
 
@@ -333,7 +411,11 @@ export function generateNewsReportPDF(stats, articles = []) {
   const doc = new jsPDF('p', 'mm', 'a4');
   const pw = 180;
 
+<<<<<<< HEAD
+  doc.setFillColor(...COLORS.bg);
+=======
   doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.rect(0, 0, 210, 297, 'F');
   drawWatermark(doc);
   drawGradientHeader(doc);
@@ -342,7 +424,11 @@ export function generateNewsReportPDF(stats, articles = []) {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
+<<<<<<< HEAD
+  doc.setTextColor(...COLORS.textPrimary);
+=======
   doc.setTextColor(...COLORS.white);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
   doc.text('Market Intelligence Brief', 15, curY);
   curY += 10;
 
@@ -381,7 +467,11 @@ export function generateNewsReportPDF(stats, articles = []) {
       if (curY > 270) {
         drawFooter(doc, doc.getNumberOfPages(), '?');
         doc.addPage();
+<<<<<<< HEAD
+        doc.setFillColor(...COLORS.bg);
+=======
         doc.setFillColor(...COLORS.darkBg);
+>>>>>>> 3a8b1e6686ec63545d132c1c18b267cfa58c091a
         doc.rect(0, 0, 210, 297, 'F');
         drawWatermark(doc);
         curY = 20;
