@@ -164,7 +164,8 @@ export function generateWarRoomPDF(debate) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       const isWinner = scoreObj.agentName === winner;
-      doc.setTextColor(isWinner ? ...COLORS.amber : ...COLORS.text);
+      const nameColor = isWinner ? COLORS.amber : COLORS.text;
+      doc.setTextColor(...nameColor);
       doc.text(scoreObj.agentName + (isWinner ? ' (Top Analyst)' : ''), 15, y);
       
       doc.setFont('helvetica', 'normal');
@@ -178,7 +179,8 @@ export function generateWarRoomPDF(debate) {
       
       const width = Math.min((scoreObj.score || 0) / 100 * 180, 180);
       if (width > 0) {
-        doc.setFillColor(isWinner ? ...COLORS.amber : ...COLORS.cyan);
+        const barColor = isWinner ? COLORS.amber : COLORS.cyan;
+        doc.setFillColor(...barColor);
         doc.rect(15, y, width, 2, 'F');
       }
       
