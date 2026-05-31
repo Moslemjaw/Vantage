@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://vantage-mdl7.onrender.com/api/:match*"
+    }
+  ]
+}
