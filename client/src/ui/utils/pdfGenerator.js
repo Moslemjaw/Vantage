@@ -72,7 +72,14 @@ function checkPage(doc, curY, needed = 30) {
 }
 
 function wrapText(doc, text, x, y, maxW, lineH = 4.5) {
-  const lines = doc.splitTextToSize(text || '', maxW);
+  const cleanText = (text || '')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[→➔➡️]/g, '->')
+    .replace(/[^\x20-\x7E\n\r]/g, '');
+
+  const lines = doc.splitTextToSize(cleanText, maxW);
   lines.forEach((line, i) => {
     if (y + i * lineH < 278) {
       doc.text(line, x, y + i * lineH);
