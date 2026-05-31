@@ -1137,7 +1137,7 @@ export default function AgentArenaPage({ me }) {
             <MessageSquare size={18} className="text-violet-500" />
             <h3 className="text-sm font-bold text-slate-700">Ask a Follow-Up Question</h3>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={followUpAgent}
               onChange={e => setFollowUpAgent(Number(e.target.value))}
@@ -1195,8 +1195,8 @@ export default function AgentArenaPage({ me }) {
       {/* What-If Scenario Builder */}
       {result && !running && (
         <div className="glass-card mt-4 border-amber-200 bg-amber-50/30">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="flex items-start sm:items-center gap-2">
               <Zap size={18} className="text-amber-500" />
               <div>
                 <h3 className="text-sm font-bold text-slate-800">What-If Scenario Mode</h3>
@@ -1219,7 +1219,7 @@ export default function AgentArenaPage({ me }) {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="flex gap-3 mt-3">
+                <div className="flex flex-col sm:flex-row gap-3 mt-3">
                   <input
                     type="text"
                     value={scenarioText}
