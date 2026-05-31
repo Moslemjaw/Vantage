@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import cron from 'node-cron';
 
 import { connectDb } from './lib/db.js';
 import { authRouter } from './routes/auth.js';
@@ -14,6 +15,10 @@ import { debateRouter } from './routes/debate.js';
 import { adminRouter } from './routes/admin.js';
 import { stocksRouter } from './routes/stocks.js';
 import { watchlistRouter } from './routes/watchlist.js';
+import { predictionsRouter } from './routes/predictions.js';
+import { portfolioRouter } from './routes/portfolio.js';
+import { agentsRouter } from './routes/agents.js';
+import { resolvePendingPredictions } from './jobs/resolvePredictions.js';
 
 const app = express();
 
@@ -37,10 +42,19 @@ app.use('/api/debate', debateRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/stocks', stocksRouter);
 app.use('/api/watchlist', watchlistRouter);
+app.use('/api/predictions', predictionsRouter);
+app.use('/api/portfolio', portfolioRouter);
+app.use('/api/agents', agentsRouter);
 
 const port = Number(process.env.PORT ?? 8080);
 
 await connectDb();
+
+// Run cron job daily at midnight
+cron.schedule('0 0 * * *', () => {
+  resolvePendingPredictions();
+});
+
 app.listen(port, () => {
   console.log(`[server] listening on http://localhost:${port}`);
 });

@@ -4,10 +4,11 @@ import {
   Brain, Zap, Lock, Target, Layers, ChevronRight, ChevronDown,
   TrendingUp, TrendingDown, Shield, AlertTriangle, Star,
   Trophy, MessageSquare, Eye, Clock, Activity, BarChart3,
-  ArrowRight, Minus, Sparkles, Users
+  ArrowRight, Minus, Sparkles, Users, Briefcase, Plus
 } from 'lucide-react';
 import { SentimentPill, ConfidenceGauge } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -209,7 +210,7 @@ function AgentCard({ msg, index, isWinner, score }) {
 // ═══════════════════════════════════════
 // Debate Timeline Component
 // ═══════════════════════════════════════
-function DebateTimeline({ messages }) {
+function DebateTimeline({ messages, challengeInputs, setChallengeInputs, challengeLoading, challengeResponses, submitChallenge }) {
   return (
     <div className="relative pl-8">
       {/* Vertical line */}
@@ -256,7 +257,43 @@ function DebateTimeline({ messages }) {
                 </div>
               )}
 
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-4">{msg.content}</p>
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-4 whitespace-pre-wrap">{msg.content}</p>
+
+              {/* Challenge UI */}
+              {!msg.agentName.includes('(Verdict)') && (
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                  {challengeResponses[i] ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-violet-50 rounded-xl border border-violet-100">
+                        <p className="text-[10px] font-bold text-violet-600 uppercase mb-1">Rebuttal</p>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap">{challengeResponses[i].rebuttal.content}</p>
+                      </div>
+                      <div className="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                        <p className="text-[10px] font-bold text-rose-600 uppercase mb-1">Risk Manager Verdict</p>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap">{challengeResponses[i].adjudication.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={challengeInputs[i] || ''}
+                        onChange={e => setChallengeInputs(prev => ({ ...prev, [i]: e.target.value }))}
+                        placeholder="Challenge this agent's logic..."
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-rose-400"
+                        onKeyDown={e => e.key === 'Enter' && submitChallenge(i, msg.agentId)}
+                      />
+                      <button
+                        onClick={() => submitChallenge(i, msg.agentId)}
+                        disabled={!challengeInputs[i]?.trim() || challengeLoading[i]}
+                        className="px-3 py-1.5 bg-rose-50 text-rose-600 font-bold text-xs rounded-lg hover:bg-rose-100 transition-colors disabled:opacity-50"
+                      >
+                        {challengeLoading[i] ? '...' : 'Challenge'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         );
@@ -268,7 +305,7 @@ function DebateTimeline({ messages }) {
 // ═══════════════════════════════════════
 // Consensus Verdict Component
 // ═══════════════════════════════════════
-function ConsensusVerdict({ consensus, messages }) {
+function ConsensusVerdict({ consensus, messages, userPortfolio }) {
   if (!consensus) return null;
 
   const sentColor = consensus.overallSentiment === 'Bullish' ? 'text-emerald-600' :
@@ -483,6 +520,44 @@ function ConsensusVerdict({ consensus, messages }) {
           </div>
         )}
 
+        {/* Portfolio Heatmap Dashboard */}
+        {userPortfolio && userPortfolio.holdings && userPortfolio.holdings.length > 0 && (
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mt-4">
+            <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <Briefcase size={10} className="text-violet-500" />
+              Portfolio Exposure Heatmap
+            </h4>
+            <div className="space-y-2">
+              {userPortfolio.holdings.map((h, i) => {
+                // simple heuristic for heatmap color
+                const inOverweight = (consensus.sectorOutlook?.overweight || []).some(s => s.toLowerCase().includes(h.sector?.toLowerCase() || 'none'));
+                const inUnderweight = (consensus.sectorOutlook?.underweight || []).some(s => s.toLowerCase().includes(h.sector?.toLowerCase() || 'none'));
+                const colorClass = inOverweight ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                                   inUnderweight ? 'bg-rose-100 text-rose-800 border-rose-200' :
+                                   'bg-white text-slate-600 border-slate-200';
+                
+                return (
+                  <div key={i} className={`flex items-center justify-between p-2 rounded-lg border ${colorClass}`}>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold">{h.ticker}</span>
+                      <span className="text-[9px] opacity-70">{h.sector}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="text-xs font-bold">{h.weight}%</span>
+                        <span className="block text-[9px] opacity-70">Weight</span>
+                      </div>
+                      <div className="text-right w-16">
+                        <span className="text-[10px] font-bold uppercase">{inOverweight ? 'Bullish' : inUnderweight ? 'Bearish' : 'Neutral'}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <p className="text-[10px] text-slate-300 text-center italic mt-4">
           Multi-agent AI analysis. Not financial advice. Generated by Vantage AI Terminal.
         </p>
@@ -495,6 +570,7 @@ function ConsensusVerdict({ consensus, messages }) {
 // MAIN PAGE COMPONENT
 // ═══════════════════════════════════════
 export default function AgentArenaPage({ me }) {
+  const { lang, t } = useLanguage();
   const [sector, setSector] = useState('All Sectors');
   const [timeHorizon, setTimeHorizon] = useState('Short-term (1-4 weeks)');
   const [marketBias, setMarketBias] = useState('Neutral');
@@ -520,7 +596,36 @@ export default function AgentArenaPage({ me }) {
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpResponses, setFollowUpResponses] = useState([]);
 
-  const ALL_AGENTS = [
+  // Phase 2: Scenario & Challenge State
+  const [scenarioMode, setScenarioMode] = useState(false);
+  const [scenarioText, setScenarioText] = useState('');
+  const [scenarioLoading, setScenarioLoading] = useState(false);
+  
+  const [challengeInputs, setChallengeInputs] = useState({});
+  const [challengeLoading, setChallengeLoading] = useState({});
+  const [challengeResponses, setChallengeResponses] = useState({});
+
+  const [customAgents, setCustomAgents] = useState([]);
+  const [userPortfolio, setUserPortfolio] = useState(null);
+
+  useEffect(() => {
+    if (!me) return;
+    async function fetchData() {
+      try {
+        const [agentsRes, portRes] = await Promise.all([
+          api('/api/agents').catch(() => ({ items: [] })),
+          api('/api/portfolio').catch(() => null)
+        ]);
+        if (agentsRes.items) setCustomAgents(agentsRes.items);
+        if (portRes && portRes.holdings) setUserPortfolio(portRes);
+      } catch (e) {
+        console.error('Failed to load data', e);
+      }
+    }
+    fetchData();
+  }, [me]);
+
+  const BASE_AGENTS = [
     { name: 'Retail Sentiment', icon: '🛒', default: true },
     { name: 'Institutional PM', icon: '🏦', default: true },
     { name: 'Dividend Strategist', icon: '💰', default: true },
@@ -533,9 +638,26 @@ export default function AgentArenaPage({ me }) {
     { name: 'GCC Comparator', icon: '📊', default: false },
   ];
 
+  const ALL_AGENTS = React.useMemo(() => [
+    ...BASE_AGENTS,
+    ...customAgents.map(ca => ({
+      name: ca.name,
+      icon: ca.icon || '🤖',
+      default: false,
+      isCustom: true,
+      _id: ca._id
+    }))
+  ], [customAgents]);
+
   const [enabledAgents, setEnabledAgents] = useState(
-    ALL_AGENTS.filter(a => a.default).map(a => a.name)
+    BASE_AGENTS.filter(a => a.default).map(a => a.name)
   );
+
+  const [showCreateAgentModal, setShowCreateAgentModal] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentRole, setNewAgentRole] = useState('');
+  const [newAgentBrief, setNewAgentBrief] = useState('');
+  const [createAgentLoading, setCreateAgentLoading] = useState(false);
 
   const LOADING_STEPS = [
     { text: 'Gathering latest Kuwait & Middle East news...', icon: '📰' },
@@ -579,6 +701,72 @@ export default function AgentArenaPage({ me }) {
     } finally { setFollowUpLoading(false); }
   }
 
+  async function launchScenario() {
+    if (!scenarioText.trim() || !result?.sessionId) return;
+    setScenarioLoading(true);
+    try {
+      const data = await api('/api/debate/start-scenario', {
+        method: 'POST',
+        body: JSON.stringify({ originalSessionId: result.sessionId, scenarioText }),
+      });
+      setResult(data);
+      setScenarioMode(false);
+      setScenarioText('');
+      setActiveView('debate');
+    } catch (e) {
+      setErr(e.message || 'Scenario run failed.');
+    } finally { setScenarioLoading(false); }
+  }
+
+  async function submitChallenge(msgIdx, agentId) {
+    const text = challengeInputs[msgIdx];
+    if (!text?.trim() || !result?.sessionId) return;
+    
+    setChallengeLoading(prev => ({ ...prev, [msgIdx]: true }));
+    try {
+      const data = await api(`/api/debate/${result.sessionId}/challenge`, {
+        method: 'POST',
+        body: JSON.stringify({ agentId, challengeText: text }),
+      });
+      setChallengeResponses(prev => ({
+        ...prev,
+        [msgIdx]: data
+      }));
+    } catch (e) {
+      setErr(e.message || 'Challenge failed.');
+    } finally {
+      setChallengeLoading(prev => ({ ...prev, [msgIdx]: false }));
+    }
+  }
+
+  async function createCustomAgent() {
+    if (!newAgentName || !newAgentRole || !newAgentBrief) return;
+    setCreateAgentLoading(true);
+    try {
+      const data = await api('/api/agents', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newAgentName,
+          role: newAgentRole,
+          brief: newAgentBrief,
+          icon: '🤖',
+          temperature: 0.5,
+          defaultPhase: 'discuss'
+        })
+      });
+      setCustomAgents(prev => [...prev, data.agent]);
+      setEnabledAgents(prev => [...prev, data.agent.name]);
+      setShowCreateAgentModal(false);
+      setNewAgentName('');
+      setNewAgentRole('');
+      setNewAgentBrief('');
+    } catch (e) {
+      setErr(e.message || 'Failed to create agent.');
+    } finally {
+      setCreateAgentLoading(false);
+    }
+  }
+
   async function launch() {
     setErr(''); setRunning(true); setResult(null); setLoadingStep(0); setActiveView('agents');
     try {
@@ -591,6 +779,7 @@ export default function AgentArenaPage({ me }) {
           countryFocus: 'Kuwait',
           agentWeights,
           enabledAgents,
+          language: lang,
         }),
       });
       setResult(d);
@@ -746,6 +935,14 @@ export default function AgentArenaPage({ me }) {
               </button>
             );
           })}
+          
+          <button
+            onClick={() => setShowCreateAgentModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-dashed border-violet-300 text-violet-600 hover:bg-violet-50 transition-all duration-200"
+          >
+            <Plus size={12} />
+            Custom
+          </button>
         </div>
 
         {/* Agent roster preview */}
@@ -925,13 +1122,20 @@ export default function AgentArenaPage({ me }) {
               <h3 className="text-sm font-bold text-slate-800 mb-5 flex items-center gap-2">
                 <MessageSquare size={16} className="text-violet-500" />Structured Debate Timeline
               </h3>
-              <DebateTimeline messages={result.messages || []} />
+              <DebateTimeline 
+                messages={result.messages || []} 
+                challengeInputs={challengeInputs}
+                setChallengeInputs={setChallengeInputs}
+                challengeLoading={challengeLoading}
+                challengeResponses={challengeResponses}
+                submitChallenge={submitChallenge}
+              />
             </div>
           )}
 
           {/* Verdict View */}
           {activeView === 'verdict' && (
-            <ConsensusVerdict consensus={result.consensusReport} messages={result.messages} />
+            <ConsensusVerdict consensus={result.consensusReport} messages={result.messages} userPortfolio={userPortfolio} />
           )}
         </>
       )}
@@ -997,6 +1201,130 @@ export default function AgentArenaPage({ me }) {
           )}
         </div>
       )}
+
+      {/* What-If Scenario Builder */}
+      {result && !running && (
+        <div className="glass-card mt-4 border-amber-200 bg-amber-50/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Zap size={18} className="text-amber-500" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">What-If Scenario Mode</h3>
+                <p className="text-[10px] text-slate-500">Inject a counterfactual event to see how the debate changes</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setScenarioMode(!scenarioMode)}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+            >
+              {scenarioMode ? 'Close' : 'New Scenario'}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {scenarioMode && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex gap-3 mt-3">
+                  <input
+                    type="text"
+                    value={scenarioText}
+                    onChange={e => setScenarioText(e.target.value)}
+                    placeholder="e.g. Oil prices drop to $50 unexpectedly"
+                    className="flex-1 bg-white border border-amber-200 rounded-xl px-4 text-sm outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10"
+                    onKeyDown={e => e.key === 'Enter' && launchScenario()}
+                  />
+                  <button
+                    onClick={launchScenario}
+                    disabled={!scenarioText.trim() || scenarioLoading}
+                    className="px-6 py-2 bg-amber-500 text-white font-bold text-sm rounded-xl hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {scenarioLoading ? 'Running...' : 'Run Scenario'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Create Custom Agent Modal */}
+      <AnimatePresence>
+        {showCreateAgentModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Plus size={16} className="text-violet-500" />
+                  Create Custom Agent
+                </h3>
+                <button onClick={() => setShowCreateAgentModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <span className="sr-only">Close</span>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Agent Name</label>
+                  <input
+                    type="text"
+                    value={newAgentName}
+                    onChange={e => setNewAgentName(e.target.value)}
+                    placeholder="e.g. Hawalli Day Trader"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Agent Role</label>
+                  <input
+                    type="text"
+                    value={newAgentRole}
+                    onChange={e => setNewAgentRole(e.target.value)}
+                    placeholder="e.g. retail, macro, sharia"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">System Prompt / Brief</label>
+                  <textarea
+                    value={newAgentBrief}
+                    onChange={e => setNewAgentBrief(e.target.value)}
+                    placeholder="Describe how this agent should analyze the market..."
+                    rows={4}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 resize-none"
+                  />
+                </div>
+              </div>
+              <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+                <button
+                  onClick={() => setShowCreateAgentModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createCustomAgent}
+                  disabled={!newAgentName || !newAgentRole || !newAgentBrief || createAgentLoading}
+                  className="px-4 py-2 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {createAgentLoading && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  Save Agent
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

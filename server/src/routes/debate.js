@@ -3,9 +3,19 @@ import { z } from 'zod';
 import { requireAuth } from '../lib/auth.js';
 import { News } from '../models/News.js';
 import { DebateSession } from '../models/DebateSession.js';
+import { Portfolio } from '../models/Portfolio.js';
+import { CustomAgent } from '../models/CustomAgent.js';
+import { Prediction } from '../models/Prediction.js';
 import { runDeepSeekJsonPrompt } from '../services/llm/deepseek.js';
 import { fetchAlphaVantageData } from '../services/market/alphavantage.js';
 import { fetchBulkQuotes } from '../services/market/kuwaitStocks.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { extractRelevantParagraphs } from '../services/market/rag.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const debateRouter = express.Router();
 
@@ -117,13 +127,17 @@ Your tone: Comparative, data-heavy, and benchmark-aware. You always ask 'is this
 const AGENT_MAX_TOKENS = 2200;
 const CONSENSUS_MAX_TOKENS = 2800;
 
-function buildAgentPrompt(agent, newsContext, priorMessages, debatePhase, countryFocus, sectorFocus) {
+function buildAgentPrompt(agent, newsContext, priorMessages, debatePhase, countryFocus, sectorFocus, agentStats = '', language = 'en') {
   const history = priorMessages.map(m =>
     `[${m.agentName}]: ${m.content}`
   ).join('\n\n');
 
   const sectorContext = sectorFocus && sectorFocus !== 'All Sectors'
     ? `\n\nSECTOR FOCUS: ${sectorFocus}\nYou MUST orient your analysis primarily around the ${sectorFocus} sector in Kuwait/GCC. Reference specific companies, sub-sectors, and value chain dynamics within ${sectorFocus}. If this sector is outside your primary expertise, explain the cross-sector transmission effects (e.g., how banking policy impacts real estate lending).`
+    : '';
+
+  const languageInstruction = language === 'ar'
+    ? `\n\n=== LANGUAGE REQUIREMENT ===\nYou MUST respond ENTIRELY in professional Arabic (العربية الفصحى). Your analysis, logic, key points, catalysts, risk factors, and stock picks must all be written in Arabic suitable for Kuwaiti institutional investors. JSON keys remain in English but all string values must be in Arabic.\n`
     : '';
 
   const phaseInstruction = {
@@ -162,9 +176,10 @@ Your contribution must:
 
   return `
 ${agent.brief}
+${agentStats ? `\n=== YOUR HISTORICAL ACCURACY ===\n${agentStats}\nUse this context to calibrate your confidence score.\n` : ''}
 
 ${phaseInstruction}
-
+${languageInstruction}
 MARKET NEWS CONTEXT:
 ${newsContext}
 
@@ -202,6 +217,7 @@ const StartDebateSchema = z.object({
   countryFocus: z.string().default('GCC (All)'),
   agentWeights: z.record(z.string(), z.number()).optional(),
   enabledAgents: z.array(z.string()).optional(),
+  language: z.enum(['en', 'ar']).default('en'),
 });
 
 debateRouter.post('/start', requireAuth, async (req, res) => {
@@ -211,7 +227,7 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'invalid_input', details: parsed.error.errors });
   }
 
-  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights, enabledAgents } = parsed.data;
+  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights, enabledAgents, language } = parsed.data;
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
   const query = { publishedAt: { $gte: since } };
@@ -220,18 +236,22 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     query.$or = [{ tag: regex }, { headline: regex }, { body: regex }];
   }
 
-  const [newsItems, macroData, stockQuotes] = await Promise.all([
+  const [newsItems, macroData, stockQuotes, userPortfolio, customAgents] = await Promise.all([
     News.find(query)
       .sort({ publishedAt: -1 })
       .limit(50)
       .select('tag source headline body publishedAt sentimentScore sentimentLabel aiAnalysis aiSectors affectedStocks analyzed'),
     fetchAlphaVantageData(),
-    fetchBulkQuotes() // Fetch live stock quotes
+    fetchBulkQuotes(), // Fetch live stock quotes
+    Portfolio.findOne({ userId: req.auth.sub }),
+    CustomAgent.find({ userId: req.auth.sub })
   ]);
 
   if (!newsItems.length) {
     return res.status(400).json({ error: 'no_news_available' });
   }
+
+  const ragExtracts = extractRelevantParagraphs(newsItems, newsItems[0]?.headline || '', sectorFocus);
 
   let newsContext = newsItems.map((n, i) => {
     const when = n.publishedAt ? new Date(n.publishedAt).toISOString().slice(0, 10) : '';
@@ -241,8 +261,14 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     return `(${i + 1}) [${when}] [${n.source}] ${n.headline}\n${(n.body || '').slice(0, 400)}${aiNote}`;
   }).join('\n\n');
 
+  if (ragExtracts) {
+    newsContext = `=== DEEP DIVE: HIGHLY RELEVANT EXTRACTS ===\n${ragExtracts}\n\n=== MARKET NEWS (HEADLINES & SNIPPETS) ===\n` + newsContext;
+  } else {
+    newsContext = `=== MARKET NEWS ===\n` + newsContext;
+  }
+
   if (macroData) {
-    newsContext = `=== LATEST COMMODITY DATA (ALPHA VANTAGE) ===\nIndicator: ${macroData.indicator}\nDate: ${macroData.date}\nValue: ${macroData.value} ${macroData.unit}\n\n=== MARKET NEWS ===\n` + newsContext;
+    newsContext = `=== LATEST COMMODITY DATA (ALPHA VANTAGE) ===\nIndicator: ${macroData.indicator}\nDate: ${macroData.date}\nValue: ${macroData.value} ${macroData.unit}\n\n` + newsContext;
   }
 
   if (stockQuotes && stockQuotes.length > 0) {
@@ -250,6 +276,23 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
       `${q.ticker}: ${q.price.toFixed(3)} KWD (${q.changePercent > 0 ? '+' : ''}${q.changePercent.toFixed(2)}%)`
     ).join(' | ');
     newsContext = `=== LIVE BOURSA KUWAIT DATA ===\n${stockString}\n\n` + newsContext;
+  }
+
+  if (userPortfolio && userPortfolio.holdings.length > 0) {
+    const pString = userPortfolio.holdings.map(h => `${h.ticker} (${h.weight}%)`).join(', ');
+    
+    let crossHoldingsText = '';
+    try {
+      const chPath = path.join(__dirname, '../data/crossHoldings.json');
+      const chData = JSON.parse(fs.readFileSync(chPath, 'utf8'));
+      crossHoldingsText = `\n\n=== CONGLOMERATE CROSS-HOLDING RISKS ===\n` + chData.map(g => 
+        `Group: ${g.groupName}\nTransmission: ${g.riskTransmission}\nKey Holdings: ${g.keyHoldings.map(k => k.ticker).join(', ')}`
+      ).join('\n\n');
+    } catch (err) {
+      console.warn('[debate] crossHoldings.json not found or invalid');
+    }
+
+    newsContext = `=== USER PORTFOLIO ===\nYour top holdings: ${pString}\nAGENTS MUST comment on how the news impacts these specific holdings and flag concentration risks.${crossHoldingsText}\n\n` + newsContext;
   }
 
   // Add simulation context
@@ -265,10 +308,25 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     messages: [],
   });
 
+  const mergedAgents = [...AGENTS];
+  if (customAgents && customAgents.length > 0) {
+    customAgents.forEach(ca => {
+      mergedAgents.push({
+        id: ca._id.toString(),
+        name: ca.name,
+        provider: 'deepseek', // defaulting to deepseek for custom agents
+        role: ca.role,
+        brief: ca.brief,
+        temperature: ca.temperature,
+        isCustom: true
+      });
+    });
+  }
+
   /* ── Dynamic Turn-Based Debate Protocol ── */
   const activeAgents = enabledAgents && enabledAgents.length > 0
-    ? AGENTS.filter(a => enabledAgents.includes(a.name))
-    : AGENTS.filter(a => a.id <= 6); // default original 6
+    ? mergedAgents.filter(a => enabledAgents.includes(a.name))
+    : mergedAgents.filter(a => a.id <= 6 || typeof a.id === 'number'); // default original 6 + custom
 
   if (activeAgents.length === 0) {
     return res.status(400).json({ error: 'no_agents_selected' });
@@ -286,7 +344,15 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
   const messages = [];
 
   for (const turn of debateOrder) {
-    const prompt = buildAgentPrompt(turn.agent, newsContext, messages, turn.phase, countryFocus, sectorFocus);
+    let agentStats = '';
+    const pastPredictions = await Prediction.find({ agentName: turn.agent.name, status: 'resolved' });
+    if (pastPredictions.length >= 5) {
+      const avgScore = pastPredictions.reduce((acc, p) => acc + (p.score || 0), 0) / pastPredictions.length;
+      const winRate = (pastPredictions.filter(p => p.score >= 50).length / pastPredictions.length) * 100;
+      agentStats = `Win Rate: ${winRate.toFixed(1)}% | Avg Confidence Score: ${avgScore.toFixed(1)}/100 (based on ${pastPredictions.length} resolved predictions).`;
+    }
+
+    const prompt = buildAgentPrompt(turn.agent, newsContext, messages, turn.phase, countryFocus, sectorFocus, agentStats, language);
     try {
       let result;
       result = await runDeepSeekJsonPrompt(prompt, AGENT_MAX_TOKENS);
@@ -486,6 +552,159 @@ Respond with ONLY valid JSON:
   } catch (err) {
     console.error('[debate] followup error:', err.message);
     return res.status(500).json({ error: 'followup_failed' });
+  }
+});
+
+debateRouter.post('/:id/challenge', requireAuth, async (req, res) => {
+  try {
+    const { agentId, challengeText } = req.body;
+    if (!challengeText) return res.status(400).json({ error: 'challenge_required' });
+
+    const session = await DebateSession.findById(req.params.id);
+    if (!session) return res.status(404).json({ error: 'not_found' });
+
+    const challengedAgent = AGENTS.find(a => a.id === agentId);
+    if (!challengedAgent) return res.status(404).json({ error: 'agent_not_found' });
+    
+    const riskAgent = AGENTS.find(a => a.id === 6) || AGENTS[5];
+
+    const transcript = session.messages.map(m =>
+      `[${m.agentName}]: ${m.content}`
+    ).join('\n\n');
+
+    // Step 1: Challenged Agent Rebuttal
+    const rebuttalPrompt = `
+${challengedAgent.brief}
+
+You previously participated in a multi-agent debate. Here is the full transcript:
+${transcript}
+
+A user is directly CHALLENGING your position:
+"${challengeText}"
+
+Respond to this challenge. Defend your thesis using data, but acknowledge valid points.
+Respond with ONLY valid JSON:
+{
+  "analysis": "Your 4-6 sentence rebuttal.",
+  "sentiment": "Bullish" or "Bearish" or "Neutral",
+  "confidence": 50
+}
+`.trim();
+
+    const rebuttalResult = await runDeepSeekJsonPrompt(rebuttalPrompt, AGENT_MAX_TOKENS);
+    const rebuttalMsg = {
+      agentId: challengedAgent.id,
+      agentName: challengedAgent.name,
+      provider: challengedAgent.provider,
+      role: challengedAgent.role,
+      content: rebuttalResult.analysis || JSON.stringify(rebuttalResult),
+      sentiment: ['Bullish', 'Bearish', 'Neutral'].includes(rebuttalResult.sentiment) ? rebuttalResult.sentiment : 'Neutral',
+      confidence: Math.min(100, Math.max(0, Number(rebuttalResult.confidence) || 50)),
+      timestamp: new Date(),
+    };
+    session.messages.push(rebuttalMsg);
+
+    // Step 2: Risk Manager Adjudication
+    const adjudicationPrompt = `
+${riskAgent.brief}
+
+A debate transcript:
+${transcript}
+
+USER CHALLENGE:
+"${challengeText}"
+
+REBUTTAL BY ${challengedAgent.name}:
+"${rebuttalMsg.content}"
+
+You are the Risk Manager. Adjudicate this specific exchange. Who made the stronger case? What risks did they both miss?
+Respond with ONLY valid JSON:
+{
+  "analysis": "Your 4-5 sentence verdict on the user's challenge vs the agent's rebuttal.",
+  "sentiment": "Bearish",
+  "confidence": 80
+}
+`.trim();
+
+    const adjudicationResult = await runDeepSeekJsonPrompt(adjudicationPrompt, AGENT_MAX_TOKENS);
+    const adjudicationMsg = {
+      agentId: riskAgent.id,
+      agentName: riskAgent.name + " (Verdict)",
+      provider: riskAgent.provider,
+      role: riskAgent.role,
+      content: adjudicationResult.analysis || JSON.stringify(adjudicationResult),
+      sentiment: ['Bullish', 'Bearish', 'Neutral'].includes(adjudicationResult.sentiment) ? adjudicationResult.sentiment : 'Neutral',
+      confidence: Math.min(100, Math.max(0, Number(adjudicationResult.confidence) || 50)),
+      timestamp: new Date(),
+    };
+    session.messages.push(adjudicationMsg);
+
+    await session.save();
+    return res.json({ rebuttal: rebuttalMsg, adjudication: adjudicationMsg });
+  } catch (err) {
+    console.error('[debate] challenge error:', err.message);
+    return res.status(500).json({ error: 'challenge_failed' });
+  }
+});
+
+debateRouter.post('/start-scenario', requireAuth, async (req, res) => {
+  try {
+    const { originalSessionId, scenarioText } = req.body;
+    if (!scenarioText) return res.status(400).json({ error: 'scenario_required' });
+
+    const originalSession = await DebateSession.findById(originalSessionId);
+    if (!originalSession) return res.status(404).json({ error: 'not_found' });
+
+    const session = await DebateSession.create({
+      userId: req.auth.sub,
+      trigger: `WHAT IF: ${scenarioText}`,
+      filters: originalSession.filters,
+      messages: [],
+    });
+
+    const newsContext = `=== ORIGINAL TRIGGER ===\n${originalSession.trigger}\n\n=== USER 'WHAT IF' SCENARIO ===\nThe user has injected a massive counterfactual scenario. You MUST assume this scenario is true and happening right now:\n\n"${scenarioText}"\n\nEvaluate the market impact of this scenario playing out immediately.`;
+
+    const debateOrder = [
+      { agent: AGENTS[4], phase: 'catalyst' },
+      { agent: AGENTS[5], phase: 'challenge' },
+      { agent: AGENTS[1], phase: 'verdict' },
+    ];
+
+    const messages = [];
+
+    for (const turn of debateOrder) {
+      const prompt = buildAgentPrompt(turn.agent, newsContext, messages, turn.phase, 'GCC (All)', 'All Sectors');
+      let result = await runDeepSeekJsonPrompt(prompt, AGENT_MAX_TOKENS);
+      
+      const analysisText = result.analysis || result.keyPoint || JSON.stringify(result);
+      const detailedLogic = result.detailedLogic || '';
+      const fullContent = detailedLogic ? `${analysisText}\n\nLogic: ${detailedLogic}` : analysisText;
+
+      messages.push({
+        agentId: turn.agent.id,
+        agentName: turn.agent.name,
+        provider: turn.agent.provider,
+        role: turn.agent.role,
+        content: fullContent,
+        sentiment: ['Bullish', 'Bearish', 'Neutral'].includes(result.sentiment) ? result.sentiment : 'Neutral',
+        confidence: Math.min(100, Math.max(0, Number(result.confidence) || 50)),
+        keyPoint: result.keyPoint || '',
+        timestamp: new Date(),
+      });
+    }
+
+    session.messages = messages;
+    session.status = 'completed';
+    await session.save();
+
+    return res.json({
+      sessionId: session._id,
+      trigger: session.trigger,
+      messages
+    });
+  } catch (err) {
+    console.error('[debate] scenario error:', err.message);
+    return res.status(500).json({ error: 'scenario_failed' });
   }
 });
 

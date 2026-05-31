@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Activity } from 'lucide-react';
 
 import { MarketSentimentProvider } from './contexts/MarketSentimentContext.jsx';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext.jsx';
 import FloatingNav from './components/FloatingNav.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import PublisherPanel from './components/PublisherPanel.jsx';
@@ -11,6 +12,8 @@ import AgentArenaPage from './pages/AgentArenaPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import StockDashboard from './pages/StockDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import LeaderboardPage from './pages/LeaderboardPage.jsx';
+import PortfolioPage from './pages/PortfolioPage.jsx';
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -78,6 +81,8 @@ export default function App() {
       case 'news': return <NewsPage me={me} />;
       case 'simulation': return <AgentArenaPage me={me} />;
       case 'history': return <HistoryPage me={me} />;
+      case 'leaderboard': return <LeaderboardPage me={me} onLogout={handleLogout} />;
+      case 'portfolio': return <PortfolioPage me={me} onLogout={handleLogout} />;
       default: return <StockDashboard me={me} />;
     }
   }, [tab, me]);
@@ -149,6 +154,29 @@ export default function App() {
       </div>
     );
   }
+
+  return (
+    <LanguageProvider>
+      <AppInner
+        me={me} tab={tab} setTab={setTab}
+        handleLogout={handleLogout}
+        showAuth={showAuth} setShowAuth={setShowAuth}
+        showAdmin={showAdmin} setShowAdmin={setShowAdmin}
+        showPublisher={showPublisher} setShowPublisher={setShowPublisher}
+        page={page}
+        handleAuth={handleAuth}
+      />
+    </LanguageProvider>
+  );
+}
+
+function AppInner({ me, tab, setTab, handleLogout, showAuth, setShowAuth, showAdmin, setShowAdmin, showPublisher, setShowPublisher, page, handleAuth }) {
+  const { isRTL } = useLanguage();
+
+  React.useEffect(() => {
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = isRTL ? 'ar' : 'en';
+  }, [isRTL]);
 
   return (
     <MarketSentimentProvider>

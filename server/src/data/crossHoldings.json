@@ -1,0 +1,36 @@
+[
+  {
+    "groupName": "KIPCO (Kuwait Projects Company)",
+    "description": "One of the largest holding companies in the MENA region with significant cross-sector exposure.",
+    "keyHoldings": [
+      { "ticker": "KIPCO.KW", "role": "Parent Holding Company" },
+      { "ticker": "BURGAN.KW", "role": "Banking Arm", "ownership": "~60%" },
+      { "ticker": "KAMCO.KW", "role": "Asset Management Arm", "ownership": "Majority" },
+      { "ticker": "URC.KW", "role": "Real Estate Arm", "ownership": "Majority" },
+      { "ticker": "SADAFCO", "role": "Food & Beverage (Saudi Listed)", "ownership": "Significant" }
+    ],
+    "riskTransmission": "If KIPCO parent faces liquidity issues or credit downgrades, borrowing costs for Burgan Bank and URC may increase. Conversely, strong dividends from Burgan Bank are the primary cash flow source for KIPCO."
+  },
+  {
+    "groupName": "Al-Kharafi Group",
+    "description": "A major family conglomerate with historical influence over several large-cap Kuwaiti stocks.",
+    "keyHoldings": [
+      { "ticker": "ZAIN.KW", "role": "Telecom (Historical/Strategic Influence)" },
+      { "ticker": "NIND.KW", "role": "National Industries Group (Cross-investments)" },
+      { "ticker": "CABLE.KW", "role": "Gulf Cable", "ownership": "Significant" },
+      { "ticker": "STC.KW", "role": "Telecom (Competitor to Zain, some cross-holdings in the broader market)" }
+    ],
+    "riskTransmission": "Systemic risk often transmits through the Al-Kharafi group's pledged shares. Margin calls on one entity historically caused sell-offs in related entities."
+  },
+  {
+    "groupName": "Agility Public Warehousing",
+    "description": "A global logistics provider with a complex web of subsidiaries and recent strategic pivots.",
+    "keyHoldings": [
+      { "ticker": "AGLTY.KW", "role": "Parent Logistics Company" },
+      { "ticker": "NREC.KW", "role": "National Real Estate Co", "ownership": "~20% (Affiliate)" },
+      { "ticker": "UPAC.KW", "role": "United Projects for Aviation Services", "ownership": "Majority via subsidiaries" },
+      { "ticker": "DSV.CO", "role": "DSV Panalpina (Danish Listed)", "ownership": "~8% (Received from GIL sale)" }
+    ],
+    "riskTransmission": "Agility's valuation is heavily tied to the performance of its DSV shares and the success of its Reem Mall project (via NREC/UPAC). Global logistics downturns impact NREC's ability to fund domestic projects."
+  }
+]

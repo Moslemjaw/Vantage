@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Newspaper, Brain, Target, History, Shield, Plus,
   ChevronDown, LogOut, Menu, Settings, User, Lock, Edit3,
-  Check, X, AlertTriangle, BarChart2
+  Check, X, AlertTriangle, BarChart2, Briefcase
 } from 'lucide-react';
 import { GeoAvatar } from './SharedComponents.jsx';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
 import TickerTape from './TickerTape.jsx';
 import logoSvg from '../public/logo.svg';
 import vantageTextUrl from '../public/darkBlue.png';
@@ -23,8 +24,10 @@ async function api(path, opts = {}) {
 const TABS = [
   { id: 'stocks', label: 'Stocks', icon: BarChart2 },
   { id: 'news', label: 'News Feed', icon: Newspaper },
+  { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'simulation', label: 'AI Agents', icon: Brain },
   { id: 'history', label: 'History', icon: History },
+  { id: 'leaderboard', label: 'Leaderboard', icon: Target },
 ];
 
 export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, setShowAdmin, setShowPublisher }) {
@@ -37,6 +40,7 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
   const [editErr, setEditErr] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const { lang, toggleLanguage, t } = useLanguage();
 
   useEffect(() => {
     function handleClick(e) {
@@ -94,6 +98,13 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
           </nav>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors text-[11px] font-bold tracking-wide"
+              title="Toggle Language"
+            >
+              {lang === 'en' ? 'عربي' : 'EN'}
+            </button>
             {me?.role === 'admin' && (
               <button onClick={() => setShowAdmin(true)}
                 className="p-1.5 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors"
