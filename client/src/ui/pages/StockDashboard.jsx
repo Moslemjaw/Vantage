@@ -66,7 +66,7 @@ export default function StockDashboard({ me }) {
     <div className="space-y-6 animate-fade-in">
       
       {/* Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-card !p-5">
           <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Globe size={12} /> Total Market Cap</p>
           <p className="text-2xl font-mono font-black text-slate-900">
@@ -88,7 +88,7 @@ export default function StockDashboard({ me }) {
           </div>
         </div>
 
-        <div className="glass-card !p-5 col-span-2">
+        <div className="glass-card !p-5 col-span-1 sm:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Layers size={14} className="text-cyan-500" /> Sector Performance</h3>
             {selectedSector && (

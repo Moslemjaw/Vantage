@@ -29,7 +29,8 @@ const TABS = [
 ];
 
 export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, setShowAdmin, setShowPublisher }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPwd, setEditPwd] = useState('');
@@ -43,7 +44,9 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
   useEffect(() => {
     function handleClick(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setMenuOpen(false);
+        setProfileOpen(false);
+        setShowProfile(false);
+      }
         setShowProfile(false);
       }
     }
@@ -119,8 +122,8 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
             )}
 
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => me ? setMenuOpen(p => !p) : setShowAuth(true)}
-                className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all">
+              <button onClick={() => me ? setProfileOpen(p => !p) : setShowAuth(true)}
+                className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all hidden sm:flex">
                 <GeoAvatar name={me?.name || '?'} status={me ? 'live' : 'offline'} size={28} />
                 <span className="text-xs font-medium text-slate-700 hidden sm:block">
                   {me ? me.name : 'Sign In'}
@@ -128,7 +131,7 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
                 {me && <ChevronDown size={12} className="text-slate-400" />}
               </button>
 
-              {menuOpen && me && (
+              {profileOpen && me && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-white border border-slate-200 shadow-xl z-50 overflow-hidden animate-fade-in">
                   <div className="px-4 py-3 border-b border-slate-100">
                     <p className="text-xs font-semibold text-slate-800">{me.name}</p>
@@ -170,20 +173,20 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
                   )}
 
                   {me.role === 'admin' && !showProfile && (
-                    <button onClick={() => { setShowAdmin(true); setMenuOpen(false); }}
+                    <button onClick={() => { setShowAdmin(true); setProfileOpen(false); }}
                       className="w-full text-left px-4 py-2 text-xs text-violet-600 hover:text-violet-700 hover:bg-violet-50 transition-colors flex items-center gap-2 border-b border-slate-100">
                       <Shield size={12} />Admin Dashboard
                     </button>
                   )}
 
                   {TABS.map(t => (
-                    <button key={t.id} onClick={() => { setTab(t.id); setMenuOpen(false); }}
+                    <button key={t.id} onClick={() => { setTab(t.id); setProfileOpen(false); }}
                       className="w-full text-left px-4 py-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center gap-2">
                       <t.icon size={12} />{t.label}
                     </button>
                   ))}
 
-                  <button onClick={() => { onLogout(); setMenuOpen(false); }}
+                  <button onClick={() => { onLogout(); setProfileOpen(false); }}
                     className="w-full text-left px-4 py-2 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 border-t border-slate-100">
                     <LogOut size={12} />Sign Out
                   </button>
@@ -191,11 +194,61 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
               )}
             </div>
 
-            <button className="md:hidden p-1.5 text-slate-500" onClick={() => setMenuOpen(p => !p)}>
-              <Menu size={18} />
+            <button className="md:hidden p-1.5 text-slate-500 hover:bg-slate-100 rounded" onClick={() => setMobileMenuOpen(p => !p)}>
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute left-0 right-0 top-14 bg-white border-b border-slate-200 shadow-xl z-50 animate-fade-in pb-4">
+            <div className="px-4 py-2 flex flex-col gap-1">
+              {!me ? (
+                <button 
+                  onClick={() => { setShowAuth(true); setMobileMenuOpen(false); }}
+                  className="w-full text-center py-2.5 mb-2 rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 text-white text-sm font-bold shadow-md"
+                >
+                  Sign In
+                </button>
+              ) : (
+                <div className="flex items-center gap-3 px-2 py-3 mb-2 border-b border-slate-100">
+                  <GeoAvatar name={me.name} status="live" size={36} />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{me.name}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded">
+                      {me.role}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {TABS.map(t => (
+                <button key={t.id} onClick={() => { setTab(t.id); setMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 rounded-lg
+                    ${tab === t.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>
+                  <t.icon size={16} />{t.label}
+                </button>
+              ))}
+
+              {me && (
+                <>
+                  <div className="h-px w-full bg-slate-100 my-2"></div>
+                  {me.role === 'admin' && (
+                    <button onClick={() => { setShowAdmin(true); setMobileMenuOpen(false); }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-violet-600 hover:bg-violet-50 transition-colors flex items-center gap-3 rounded-lg">
+                      <Shield size={16} />Admin Dashboard
+                    </button>
+                  )}
+                  <button onClick={() => { onLogout(); setMobileMenuOpen(false); }}
+                    className="w-full text-left px-4 py-3 text-sm font-medium text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-3 rounded-lg">
+                    <LogOut size={16} />Sign Out
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <TickerTape />
       </div>

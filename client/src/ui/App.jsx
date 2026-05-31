@@ -186,7 +186,7 @@ function AppInner({ me, tab, setTab, handleLogout, showAuth, setShowAuth, showAd
   return (
     <MarketSentimentProvider>
       <div className="min-h-screen relative">
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden hidden md:block">
           {PARTICLE_SEED.map((p, i) => (
             <motion.div
               key={i}
