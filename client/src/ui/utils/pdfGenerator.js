@@ -1,300 +1,299 @@
 import jsPDF from 'jspdf';
 
 /**
- * Premium PDF Report Generator for Vantage Terminal
- * Creates professional financial-grade PDF reports
+ * Clean, simple PDF Report Generator for Vantage Terminal
  */
 
 const COLORS = {
   bg: [248, 250, 252],
-  headerBg: [255, 255, 255],
-  cardBg: [255, 255, 255],
+  white: [255, 255, 255],
   cyan: [34, 211, 238],
   violet: [167, 139, 250],
   emerald: [16, 185, 129],
   rose: [244, 63, 94],
   amber: [245, 158, 11],
-  white: [255, 255, 255],
-  textPrimary: [15, 23, 42],
-  textSecondary: [71, 85, 105],
+  text: [15, 23, 42],
+  textLight: [71, 85, 105],
   textMuted: [148, 163, 184],
   border: [226, 232, 240],
-  watermark: [226, 232, 240],
 };
 
-function drawWatermark(doc) {
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(60);
-  doc.setTextColor(...COLORS.watermark);
-  doc.text('VANTAGE AI', 105, 140, { align: 'center' });
-  doc.setFontSize(30);
-  doc.text('CONFIDENTIAL REPORT', 105, 155, { align: 'center' });
-}
-
-function drawGradientHeader(doc) {
-  doc.rect(0, 0, 210, 50, 'F');
-
-  // Gradient accent line (top edge)
+function drawHeader(doc) {
+  // Thin gradient accent bar at top
   for (let x = 0; x < 210; x++) {
     const ratio = x / 210;
     const r = Math.round(COLORS.cyan[0] * (1 - ratio) + COLORS.violet[0] * ratio);
     const g = Math.round(COLORS.cyan[1] * (1 - ratio) + COLORS.violet[1] * ratio);
     const b = Math.round(COLORS.cyan[2] * (1 - ratio) + COLORS.violet[2] * ratio);
     doc.setFillColor(r, g, b);
-    doc.rect(x, 0, 1, 2, 'F');
+    doc.rect(x, 0, 1, 3, 'F');
   }
 
-  // Logo area
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
-  doc.text('VANTAGE', 15, 25);
+  doc.setFontSize(20);
+  doc.setTextColor(...COLORS.text);
+  doc.text('VANTAGE', 15, 18);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(...COLORS.cyan);
-  doc.text('AI FINANCIAL TERMINAL  |  INTELLIGENCE DIVISION', 15, 32);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text('AI Financial Terminal', 15, 23);
 
-  // Security Classification Badge
-  doc.text('CLASSIFIED', 30, 41.5, { align: 'center' });
-
-  // Report Date & Time
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...COLORS.textSecondary);
   const now = new Date();
-  doc.text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 195, 25, { align: 'right' });
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(8);
+  doc.text(now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 195, 18, { align: 'right' });
 }
 
 function drawFooter(doc, pageNum, totalPages) {
-  const y = 285;
-  doc.rect(0, y - 5, 210, 17, 'F');
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.3);
+  doc.line(15, 282, 195, 282);
 
-  // Subtle accent line
-  doc.setFillColor(...COLORS.border);
-  doc.rect(0, y - 5, 210, 0.5, 'F');
-
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(...COLORS.textMuted);
-  doc.text('VANTAGE AI TERMINAL', 15, y + 2);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.text('Generated strictly for authorized personnel only.', 15, y + 6);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.cyan);
-  doc.text(`PAGE ${pageNum} OF ${totalPages}`, 195, y + 4, { align: 'right' });
+  doc.text('Vantage AI Terminal — Confidential', 15, 287);
+  doc.text(`Page ${pageNum} of ${totalPages}`, 195, 287, { align: 'right' });
 }
 
-function drawCard(doc, x, y, w, h, borderColor) {
-  doc.setFillColor(...COLORS.cardBg);
-  doc.roundedRect(x, y, w, h, 2, 2, 'F');
-  
-  if (borderColor) {
-    doc.setDrawColor(...borderColor);
-    doc.setLineWidth(0.5);
-  } else {
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(0.2);
-  }
-  doc.roundedRect(x, y, w, h, 2, 2, 'S');
+function newPage(doc) {
+  doc.addPage();
+  doc.setFillColor(...COLORS.bg);
+  doc.rect(0, 0, 210, 297, 'F');
+  drawHeader(doc);
+  return 32;
 }
 
-function drawKPI(doc, x, y, label, value, color = COLORS.cyan) {
-  drawCard(doc, x, y, 42, 24);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(...color);
-  doc.text(String(value), x + 21, y + 13, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.text(label.toUpperCase(), x + 21, y + 19, { align: 'center' });
+function checkPage(doc, curY, needed = 30) {
+  if (curY + needed > 275) {
+    return newPage(doc);
+  }
+  return curY;
 }
 
-function drawSentimentBar(doc, x, y, w, bull, neutral, bear, total) {
-  if (total === 0) return;
-  const bullW = (bull / total) * w;
-  const neutralW = (neutral / total) * w;
-  const bearW = (bear / total) * w;
-  const h = 4;
-
-  if (bullW > 0) {
-    doc.setFillColor(...COLORS.emerald);
-    doc.rect(x, y, bullW, h, 'F');
-  }
-  if (neutralW > 0) {
-    doc.setFillColor(...COLORS.textMuted);
-    doc.rect(x + bullW, y, neutralW, h, 'F');
-  }
-  if (bearW > 0) {
-    doc.setFillColor(...COLORS.rose);
-    doc.rect(x + bullW + neutralW, y, bearW, h, 'F');
-  }
-}
-
-function addWrappedText(doc, text, x, y, maxWidth, lineHeight = 4.5) {
-  const lines = doc.splitTextToSize(text || '', maxWidth);
+function wrapText(doc, text, x, y, maxW, lineH = 4.5) {
+  const lines = doc.splitTextToSize(text || '', maxW);
   lines.forEach((line, i) => {
-    if (y + i * lineHeight < 280) {
-      doc.text(line, x, y + i * lineHeight);
+    if (y + i * lineH < 278) {
+      doc.text(line, x, y + i * lineH);
     }
   });
-  return y + lines.length * lineHeight;
+  return y + lines.length * lineH;
 }
 
-// ─── War Room / Agent Debate PDF ─────────────────────────────────────────
+// ─── War Room / Agent Debate PDF ─────────────────────────────
 
 export function generateWarRoomPDF(debate) {
   const doc = new jsPDF('p', 'mm', 'a4');
-  const pw = 180; // page width minus margins
 
-  // Initialize Page 1
+  // Page 1 background
+  doc.setFillColor(...COLORS.bg);
   doc.rect(0, 0, 210, 297, 'F');
-  drawWatermark(doc);
-  drawGradientHeader(doc);
+  drawHeader(doc);
 
-  let curY = 60;
+  let y = 35;
 
-  // Report Title
+  // Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('Multi-Agent Debate Analysis', 15, curY);
-  curY += 10;
+  doc.setFontSize(16);
+  doc.setTextColor(...COLORS.text);
+  doc.text('Multi-Agent Debate Analysis', 15, y);
+  y += 10;
 
-  // Trigger / Topic
+  // Trigger
   if (debate.trigger) {
-    drawCard(doc, 15, curY, pw, 18, COLORS.cyan);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.cyan);
-    doc.text('ANALYSIS TRIGGER', 20, curY + 6);
+    doc.text('TRIGGER', 15, y);
+    y += 5;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(...COLORS.textPrimary);
-    const lines = doc.splitTextToSize(debate.trigger, pw - 12);
-    doc.text(lines[0] || '', 20, curY + 12);
-    curY += 24;
+    doc.setTextColor(...COLORS.text);
+    y = wrapText(doc, debate.trigger, 15, y, 180);
+    y += 6;
   }
 
-  // Meta Row (KPIs)
-  const isCompleted = debate.status === 'completed';
-  drawKPI(doc, 15, curY, 'Status', debate.status?.toUpperCase() || 'N/A', isCompleted ? COLORS.emerald : COLORS.amber);
-  drawKPI(doc, 60, curY, 'Impact Score', `${debate.marketImpactRating || '?'}/10`, COLORS.rose);
-  drawKPI(doc, 105, curY, 'Total Agents', debate.messages?.length || 0, COLORS.violet);
-  curY += 32;
+  // Status row
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.3);
+  doc.line(15, y, 195, y);
+  y += 6;
 
-  // Consensus Report
+  const status = debate.status?.toUpperCase() || 'N/A';
+  const impact = `${debate.marketImpactRating || '?'}/10`;
+  const agents = debate.messages?.length || 0;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text('STATUS', 15, y);
+  doc.text('IMPACT', 75, y);
+  doc.text('AGENTS', 135, y);
+  y += 5;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  const statusColor = status === 'COMPLETED' ? COLORS.emerald : COLORS.amber;
+  doc.setTextColor(...statusColor);
+  doc.text(status, 15, y);
+  doc.setTextColor(...COLORS.rose);
+  doc.text(impact, 75, y);
+  doc.setTextColor(...COLORS.violet);
+  doc.text(String(agents), 135, y);
+  y += 8;
+
+  doc.setDrawColor(...COLORS.border);
+  doc.line(15, y, 195, y);
+  y += 8;
+
+  // ─── Consensus Summary ───
   if (debate.consensusReport) {
     const cr = debate.consensusReport;
-    drawCard(doc, 15, curY, pw, 8, COLORS.violet);
+
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.violet);
-    doc.text('EXECUTIVE CONSENSUS', 20, curY + 6);
-    curY += 12;
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.text);
+    doc.text('Consensus Summary', 15, y);
+    y += 7;
 
     if (cr.summary) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.setTextColor(...COLORS.textPrimary);
-      curY = addWrappedText(doc, cr.summary, 20, curY, pw - 10, 5);
-      curY += 6;
+      doc.setTextColor(...COLORS.textLight);
+      y = wrapText(doc, cr.summary, 15, y, 180, 5);
+      y += 6;
+    }
+
+    if (cr.marketBias) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('MARKET BIAS', 15, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.text);
+      doc.text(cr.marketBias, 50, y);
+      y += 6;
+    }
+
+    if (cr.confidenceLevel) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textMuted);
+      doc.text('CONFIDENCE', 15, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...COLORS.text);
+      doc.text(String(cr.confidenceLevel), 50, y);
+      y += 6;
     }
 
     if (cr.keyPoints?.length) {
+      y = checkPage(doc, y, 20);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(...COLORS.cyan);
-      doc.text('KEY STRATEGIC POINTS', 20, curY);
-      curY += 6;
+      doc.text('Key Points', 15, y);
+      y += 5;
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.setTextColor(...COLORS.textSecondary);
+      doc.setTextColor(...COLORS.textLight);
       cr.keyPoints.forEach(pt => {
-        if (curY > 265) {
-          drawFooter(doc, doc.getNumberOfPages(), '?');
-          doc.addPage();
-          doc.rect(0, 0, 210, 297, 'F');
-          drawWatermark(doc);
-          curY = 20;
-        }
-        doc.setFillColor(...COLORS.cyan);
-        doc.circle(21, curY - 1.2, 0.8, 'F');
-        curY = addWrappedText(doc, pt, 25, curY, pw - 15, 4.5);
-        curY += 2;
+        y = checkPage(doc, y, 12);
+        doc.text('•', 17, y);
+        y = wrapText(doc, pt, 22, y, 170, 4.5);
+        y += 2;
       });
-      curY += 6;
+      y += 4;
     }
+
+    if (cr.risks?.length) {
+      y = checkPage(doc, y, 20);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.rose);
+      doc.text('Risks', 15, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textLight);
+      cr.risks.forEach(r => {
+        y = checkPage(doc, y, 12);
+        doc.text('•', 17, y);
+        y = wrapText(doc, r, 22, y, 170, 4.5);
+        y += 2;
+      });
+      y += 4;
+    }
+
+    if (cr.actionItems?.length) {
+      y = checkPage(doc, y, 20);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.emerald);
+      doc.text('Action Items', 15, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.textLight);
+      cr.actionItems.forEach(a => {
+        y = checkPage(doc, y, 12);
+        doc.text('•', 17, y);
+        y = wrapText(doc, a, 22, y, 170, 4.5);
+        y += 2;
+      });
+      y += 4;
+    }
+
+    // Separator
+    y = checkPage(doc, y, 10);
+    doc.setDrawColor(...COLORS.border);
+    doc.line(15, y, 195, y);
+    y += 8;
   }
 
-  // Agent Messages
+  // ─── Agent Transcripts ───
   if (debate.messages?.length) {
-    if (curY > 230) {
-      drawFooter(doc, doc.getNumberOfPages(), '?');
-      doc.addPage();
-      doc.rect(0, 0, 210, 297, 'F');
-      drawWatermark(doc);
-      curY = 20;
-    }
-
-    // Divider Line
-    doc.setDrawColor(...COLORS.border);
-    doc.setLineWidth(0.5);
-    doc.line(15, curY, 195, curY);
-    curY += 10;
-
+    y = checkPage(doc, y, 20);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(...COLORS.amber);
-    doc.text('RAW AGENT TRANSCRIPTS', 15, curY);
-    curY += 10;
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.text);
+    doc.text('Agent Transcripts', 15, y);
+    y += 8;
 
     debate.messages.forEach((msg, idx) => {
-      // Calculate height of message card
       const content = (msg.content || '').trim();
-      const lines = doc.splitTextToSize(content, pw - 16);
-      const textHeight = lines.length * 4.2;
-      const cardHeight = textHeight + 16;
+      const lines = doc.splitTextToSize(content, 170);
+      const needed = lines.length * 4.2 + 14;
 
-      if (curY + cardHeight > 270) {
-        drawFooter(doc, doc.getNumberOfPages(), '?');
-        doc.addPage();
-        doc.rect(0, 0, 210, 297, 'F');
-        drawWatermark(doc);
-        curY = 20;
-      }
+      y = checkPage(doc, y, Math.min(needed, 60));
 
-      const agentColor = idx % 2 === 0 ? COLORS.cyan : COLORS.violet;
-      
-      // Draw message card
-      drawCard(doc, 15, curY, pw, cardHeight);
-      
-      // Agent Avatar/Icon
-      doc.setFillColor(agentColor[0], agentColor[1], agentColor[2]);
-      doc.roundedRect(20, curY + 4, 6, 6, 1, 1, 'F');
+      // Agent name
+      const color = idx % 2 === 0 ? COLORS.cyan : COLORS.violet;
+      doc.setFillColor(...color);
+      doc.rect(15, y - 3, 2, 8, 'F');
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6);
-      const initial = (msg.agentName || 'A').charAt(0).toUpperCase();
-      doc.text(initial, 23, curY + 8, { align: 'center' });
-
-      // Agent Name & Role
       doc.setFontSize(8);
-      doc.setTextColor(...agentColor);
-      doc.text(msg.agentName || `Agent ${idx + 1}`, 29, curY + 7);
-      
+      doc.setTextColor(...color);
+      doc.text(msg.agentName || `Agent ${idx + 1}`, 20, y);
+
+      if (msg.role) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...COLORS.textMuted);
+        doc.text(msg.role, 20, y + 4);
+      }
+      y += 8;
+
+      // Content
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6);
-      doc.setTextColor(...COLORS.textMuted);
-      doc.text(msg.role || '', 29, curY + 10);
-
-      // Message Content
       doc.setFontSize(8);
-      doc.setTextColor(...COLORS.textPrimary);
-      addWrappedText(doc, content, 20, curY + 16, pw - 10, 4.2);
-
-      curY += cardHeight + 6;
+      doc.setTextColor(...COLORS.text);
+      y = wrapText(doc, content, 20, y, 170, 4.2);
+      y += 8;
     });
   }
 
@@ -312,80 +311,90 @@ export function generateWarRoomPDF(debate) {
 
 export function generateNewsReportPDF(stats, articles = []) {
   const doc = new jsPDF('p', 'mm', 'a4');
-  const pw = 180;
 
+  doc.setFillColor(...COLORS.bg);
   doc.rect(0, 0, 210, 297, 'F');
-  drawWatermark(doc);
-  drawGradientHeader(doc);
+  drawHeader(doc);
 
-  let curY = 60;
+  let y = 35;
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('Market Intelligence Brief', 15, curY);
-  curY += 10;
+  doc.setFontSize(16);
+  doc.setTextColor(...COLORS.text);
+  doc.text('Market Intelligence Brief', 15, y);
+  y += 10;
 
-  // KPIs
-  drawKPI(doc, 15, curY, 'Total Articles', stats.total || 0, COLORS.cyan);
-  drawKPI(doc, 60, curY, 'Bullish', stats.bull || 0, COLORS.emerald);
-  drawKPI(doc, 105, curY, 'Bearish', stats.bear || 0, COLORS.rose);
-  drawKPI(doc, 150, curY, 'Sources', stats.sources || 0, COLORS.violet);
-  curY += 32;
+  // Stats row
+  doc.setDrawColor(...COLORS.border);
+  doc.line(15, y, 195, y);
+  y += 6;
 
-  // Sentiment overview
-  drawCard(doc, 15, curY, pw, 22);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(...COLORS.cyan);
-  doc.text('SENTIMENT DISTRIBUTION', 20, curY + 6);
-
-  const avgS = stats.avgScore || 0;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(...COLORS.textSecondary);
-  doc.text(`Market Momentum Score: ${avgS > 0 ? '+' : ''}${avgS.toFixed(2)}`, 20, curY + 12);
+  doc.setTextColor(...COLORS.textMuted);
+  doc.text('ARTICLES', 15, y);
+  doc.text('BULLISH', 55, y);
+  doc.text('BEARISH', 95, y);
+  doc.text('SOURCES', 135, y);
+  y += 5;
 
-  drawSentimentBar(doc, 20, curY + 16, pw - 10, stats.bull || 0, stats.neutral || 0, stats.bear || 0, stats.total || 1);
-  curY += 28;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...COLORS.cyan);
+  doc.text(String(stats.total || 0), 15, y);
+  doc.setTextColor(...COLORS.emerald);
+  doc.text(String(stats.bull || 0), 55, y);
+  doc.setTextColor(...COLORS.rose);
+  doc.text(String(stats.bear || 0), 95, y);
+  doc.setTextColor(...COLORS.violet);
+  doc.text(String(stats.sources || 0), 135, y);
+  y += 8;
 
-  // Article List
+  doc.setDrawColor(...COLORS.border);
+  doc.line(15, y, 195, y);
+  y += 8;
+
+  // Sentiment bar
+  const total = stats.total || 1;
+  const bullW = ((stats.bull || 0) / total) * 170;
+  const neutralW = ((stats.neutral || 0) / total) * 170;
+  const bearW = ((stats.bear || 0) / total) * 170;
+
+  if (bullW > 0) { doc.setFillColor(...COLORS.emerald); doc.rect(15, y, bullW, 3, 'F'); }
+  if (neutralW > 0) { doc.setFillColor(...COLORS.textMuted); doc.rect(15 + bullW, y, neutralW, 3, 'F'); }
+  if (bearW > 0) { doc.setFillColor(...COLORS.rose); doc.rect(15 + bullW + neutralW, y, bearW, 3, 'F'); }
+  y += 10;
+
+  // Articles
   if (articles.length) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(...COLORS.amber);
-    doc.text('LATEST MARKET DEVELOPMENTS', 15, curY);
-    curY += 8;
+    doc.setTextColor(...COLORS.text);
+    doc.text('Latest Headlines', 15, y);
+    y += 7;
 
-    articles.slice(0, 25).forEach((art, i) => {
-      if (curY > 270) {
-        drawFooter(doc, doc.getNumberOfPages(), '?');
-        doc.addPage();
-        doc.rect(0, 0, 210, 297, 'F');
-        drawWatermark(doc);
-        curY = 20;
-      }
+    articles.slice(0, 25).forEach(art => {
+      y = checkPage(doc, y, 10);
 
-      // Sentiment indicator
       const sentColor = art.sentimentScore > 0.15 ? COLORS.emerald : art.sentimentScore < -0.15 ? COLORS.rose : COLORS.textMuted;
       doc.setFillColor(...sentColor);
-      doc.rect(15, curY - 2.5, 1.5, 6, 'F');
+      doc.rect(15, y - 2.5, 1.5, 5, 'F');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.setTextColor(...COLORS.textPrimary);
-      const headline = (art.headline || '').slice(0, 95);
-      doc.text(headline, 19, curY);
+      doc.setTextColor(...COLORS.text);
+      doc.text((art.headline || '').slice(0, 95), 19, y);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6);
       doc.setTextColor(...COLORS.textMuted);
-      doc.text(`${art.source || 'Intelligence Feed'}  ·  Sentiment: ${art.sentimentScore != null ? (art.sentimentScore > 0 ? '+' : '') + art.sentimentScore.toFixed(2) : 'N/A'}`, 19, curY + 3.5);
-      
-      curY += 8.5;
+      const score = art.sentimentScore != null ? (art.sentimentScore > 0 ? '+' : '') + art.sentimentScore.toFixed(2) : 'N/A';
+      doc.text(`${art.source || 'Feed'}  ·  ${score}`, 19, y + 3.5);
+
+      y += 8.5;
     });
   }
 
-  // Fix page numbers
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
