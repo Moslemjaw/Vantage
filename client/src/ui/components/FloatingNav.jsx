@@ -24,10 +24,8 @@ async function api(path, opts = {}) {
 const TABS = [
   { id: 'stocks', label: 'Stocks', icon: BarChart2 },
   { id: 'news', label: 'News Feed', icon: Newspaper },
-  { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'simulation', label: 'AI Agents', icon: Brain },
   { id: 'history', label: 'History', icon: History },
-  { id: 'leaderboard', label: 'Leaderboard', icon: Target },
 ];
 
 export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, setShowAdmin, setShowPublisher }) {

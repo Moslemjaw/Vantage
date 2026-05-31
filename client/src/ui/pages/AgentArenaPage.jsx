@@ -945,16 +945,6 @@ export default function AgentArenaPage({ me }) {
           </button>
         </div>
 
-        {/* Agent roster preview */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {Object.entries(AGENT_THEMES).map(([name, theme]) => (
-            <div key={name} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${theme.bg} border ${theme.border} hover:shadow-sm transition-shadow cursor-default`}>
-              <theme.icon size={11} style={{ color: theme.color }} />
-              <span className={`text-[10px] font-bold ${theme.text}`}>{name}</span>
-            </div>
-          ))}
-        </div>
-
         {/* Agent Weights Panel */}
         <div className="pt-3 border-t border-slate-100">
           <button onClick={() => setShowWeights(!showWeights)} className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors mb-2">
