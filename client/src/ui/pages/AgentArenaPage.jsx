@@ -612,10 +612,6 @@ export default function AgentArenaPage({ me }) {
             
             {/* Sector Focus */}
             <div className="lg:col-span-4">
-              <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">
-                <Target size={14} className="text-violet-500" />
-                Sector Focus
-              </label>
               <div className="relative">
                 <select
                   value={sector}
@@ -637,10 +633,6 @@ export default function AgentArenaPage({ me }) {
 
             {/* Time Horizon */}
             <div className="lg:col-span-4">
-              <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">
-                <Clock size={14} className="text-cyan-500" />
-                Time Horizon
-              </label>
               <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
                 {TIME_HORIZONS.map(th => (
                   <button
@@ -661,10 +653,6 @@ export default function AgentArenaPage({ me }) {
 
             {/* Market Bias */}
             <div className="lg:col-span-4">
-              <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">
-                <Activity size={14} className="text-emerald-500" />
-                Market Bias
-              </label>
               <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
                 {MARKET_BIASES.map(mb => (
                   <button
