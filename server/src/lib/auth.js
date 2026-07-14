@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { User } from '../models/User.js';
 
 const COOKIE_NAME = 'fine_token';
 
@@ -40,15 +41,19 @@ export function requireAuth(req, res, next) {
   }
 }
 
-export function requireAdmin(req, res, next) {
+export async function requireAdmin(req, res, next) {
   if (!req.auth) return res.status(401).json({ error: 'unauthorized' });
-  if (req.auth.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const user = await User.findById(req.auth.sub).select('role');
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'forbidden' });
+  }
   return next();
 }
 
-export function requirePublisher(req, res, next) {
+export async function requirePublisher(req, res, next) {
   if (!req.auth) return res.status(401).json({ error: 'unauthorized' });
-  if (req.auth.role !== 'publisher' && req.auth.role !== 'admin') {
+  const user = await User.findById(req.auth.sub).select('role');
+  if (!user || (user.role !== 'publisher' && user.role !== 'admin')) {
     return res.status(403).json({ error: 'forbidden' });
   }
   return next();
