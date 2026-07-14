@@ -12,12 +12,12 @@ articlesRouter.get('/', async (_req, res) => {
 });
 
 const UpsertArticleSchema = z.object({
-  title: z.string().min(3).max(300),
-  excerpt: z.string().max(800).optional(),
-  content: z.string().max(20000).optional(),
-  source: z.string().max(120).optional(),
+  title: z.string().min(1),
+  excerpt: z.string().optional(),
+  content: z.string().optional(),
+  source: z.string().optional(),
   url: z.string().url().optional().or(z.literal('')),
-  tags: z.array(z.string().min(1).max(32)).optional(),
+  tags: z.array(z.string()).optional(),
   publishedAt: z.string().datetime().optional(),
 });
 

@@ -207,7 +207,10 @@ export default function NewsPage({ me }) {
       });
       await api(`/api/articles/${created.item._id}/save`, { method: 'POST' });
       setSavedIds(prev => ({ ...prev, [n._id]: true }));
-    } catch {}
+    } catch (e) {
+      console.error('Save error:', e);
+      alert('Failed to save article: ' + e.message);
+    }
   }
 
   const bullPct = stats.total ? Math.round(stats.bull / stats.total * 100) : 0;
