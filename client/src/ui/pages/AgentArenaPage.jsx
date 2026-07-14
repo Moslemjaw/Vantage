@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Zap, Lock, Target, Layers, ChevronRight, ChevronDown,
   TrendingUp, TrendingDown, Shield, AlertTriangle, Star,
   Trophy, MessageSquare, Eye, Clock, Activity, BarChart3,
-  ArrowRight, Minus, Sparkles, Users, Briefcase, Plus
+  ArrowRight, Minus, Sparkles, Users, Briefcase, Plus, BookmarkCheck, Check
 } from 'lucide-react';
 import { SentimentPill, ConfidenceGauge, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
@@ -627,6 +627,21 @@ export default function AgentArenaPage({ me }) {
     fetchData();
   }, [me]);
 
+  // Saved Articles
+  const [savedArticles, setSavedArticles] = useState([]);
+  const [selectedArticleIds, setSelectedArticleIds] = useState([]);
+  const [showArticlePicker, setShowArticlePicker] = useState(false);
+
+  const loadSavedArticles = useCallback(async () => {
+    if (!me) return;
+    try {
+      const d = await api('/api/articles/saved/mine');
+      setSavedArticles(d.items ?? []);
+    } catch {}
+  }, [me]);
+
+  useEffect(() => { loadSavedArticles(); }, [loadSavedArticles]);
+
   const BASE_AGENTS = [
     { name: 'Retail Sentiment', icon: '🛒', default: true },
     { name: 'Institutional PM', icon: '🏦', default: true },
@@ -782,6 +797,7 @@ export default function AgentArenaPage({ me }) {
           agentWeights,
           enabledAgents,
           language: lang,
+          articleIds: selectedArticleIds.length ? selectedArticleIds : undefined,
         }),
       });
       setResult(d);
@@ -995,6 +1011,86 @@ export default function AgentArenaPage({ me }) {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Saved Articles Picker */}
+        {me && savedArticles.length > 0 && (
+          <div className="pt-3 border-t border-slate-100">
+            <button
+              onClick={() => setShowArticlePicker(!showArticlePicker)}
+              className="flex items-center gap-2 w-full text-left mb-2"
+            >
+              <BookmarkCheck size={14} className="text-violet-500" />
+              <span className="text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors">
+                Saved Articles {selectedArticleIds.length > 0 && <span className="text-violet-600">({selectedArticleIds.length} selected)</span>}
+              </span>
+              <span className="text-[9px] text-slate-400 font-normal ml-1">(choose articles to focus the analysis on)</span>
+              <ChevronDown size={14} className={`ml-auto text-slate-400 transition-transform duration-200 ${showArticlePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showArticlePicker && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-gradient-to-br from-slate-50 to-violet-50/30 rounded-xl border border-slate-200">
+                    {/* Select All / Clear */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => setSelectedArticleIds(savedArticles.map(a => a._id))}
+                        className="text-[10px] text-violet-600 hover:text-violet-500 font-bold"
+                      >Select All</button>
+                      <span className="text-slate-300">|</span>
+                      <button
+                        onClick={() => setSelectedArticleIds([])}
+                        className="text-[10px] text-slate-400 hover:text-slate-600 font-bold"
+                      >Clear</button>
+                    </div>
+
+                    <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
+                      {savedArticles.map(article => {
+                        const isSelected = selectedArticleIds.includes(article._id);
+                        return (
+                          <button
+                            key={article._id}
+                            onClick={() => {
+                              setSelectedArticleIds(prev =>
+                                isSelected
+                                  ? prev.filter(id => id !== article._id)
+                                  : [...prev, article._id]
+                              );
+                            }}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-all ${
+                              isSelected
+                                ? 'bg-violet-50 border-violet-200'
+                                : 'bg-white border-slate-100 hover:border-slate-200'
+                            }`}
+                          >
+                            <div className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                              isSelected ? 'bg-violet-500 border-violet-500' : 'border-slate-300'
+                            }`}>
+                              {isSelected && <Check size={10} className="text-white" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-[11px] font-semibold leading-tight truncate ${
+                                isSelected ? 'text-violet-700' : 'text-slate-600'
+                              }`}>{article.title}</p>
+                              <p className="text-[9px] text-slate-400 mt-0.5 truncate">
+                                {article.source || 'Unknown'} • {article.tags?.join(', ') || ''}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {!me && (
           <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">

@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../lib/auth.js';
 import { News } from '../models/News.js';
+import { Article } from '../models/Article.js';
 import { DebateSession } from '../models/DebateSession.js';
 import { Portfolio } from '../models/Portfolio.js';
 import { CustomAgent } from '../models/CustomAgent.js';
@@ -218,6 +219,7 @@ const StartDebateSchema = z.object({
   agentWeights: z.record(z.string(), z.number()).optional(),
   enabledAgents: z.array(z.string()).optional(),
   language: z.enum(['en', 'ar']).default('en'),
+  articleIds: z.array(z.string()).optional(),
 });
 
 debateRouter.post('/start', requireAuth, async (req, res) => {
@@ -227,7 +229,7 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'invalid_input', details: parsed.error.errors });
   }
 
-  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights, enabledAgents, language } = parsed.data;
+  const { marketBias, sectorFocus, timeHorizon, countryFocus, agentWeights, enabledAgents, language, articleIds } = parsed.data;
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
   const query = { publishedAt: { $gte: since } };
@@ -253,6 +255,18 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
 
   const ragExtracts = extractRelevantParagraphs(newsItems, newsItems[0]?.headline || '', sectorFocus);
 
+  // Build user-selected articles context (if any)
+  let selectedArticlesContext = '';
+  if (articleIds?.length) {
+    const savedArticles = await Article.find({ _id: { $in: articleIds } });
+    if (savedArticles.length) {
+      selectedArticlesContext = savedArticles.map((a) => {
+        const when = a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 10) : '';
+        return `[${when}] [${a.source || 'Saved'}] TITLE: "${a.title}" URL: ${a.url || 'None'}\n${(a.excerpt || a.content || '').slice(0, 600)}`;
+      }).join('\n\n');
+    }
+  }
+
   let newsContext = newsItems.map((n) => {
     const when = n.publishedAt ? new Date(n.publishedAt).toISOString().slice(0, 10) : '';
     const aiNote = n.analyzed && n.aiAnalysis
@@ -261,8 +275,13 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     return `[${when}] [${n.source}] TITLE: "${n.headline}" URL: ${n.url || 'None'}\n${(n.body || '').slice(0, 400)}${aiNote}`;
   }).join('\n\n');
 
+  // Prepend selected articles with priority
+  if (selectedArticlesContext) {
+    newsContext = `=== USER-SELECTED ARTICLES (PRIORITIZE THESE — the user specifically chose these articles for analysis) ===\n${selectedArticlesContext}\n\n` + newsContext;
+  }
+
   if (ragExtracts) {
-    newsContext = `=== DEEP DIVE: HIGHLY RELEVANT EXTRACTS ===\n${ragExtracts}\n\n=== MARKET NEWS (HEADLINES & SNIPPETS) ===\n` + newsContext;
+    newsContext = `=== DEEP DIVE: HIGHLY RELEVANT EXTRACTS ===\n${ragExtracts}\n\n` + newsContext;
   } else {
     newsContext = `=== MARKET NEWS ===\n` + newsContext;
   }

@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Zap, Lock, Shield, Globe, Users, Landmark, Building2,
   BarChart3, AlertTriangle, ChevronRight, FileText, Clock, Layers,
-  Download, Target
+  Download, Target, BookmarkCheck, ChevronDown, Check, X
 } from 'lucide-react';
 import { SentimentPill, ConfidenceGauge, SkeletonCard, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
@@ -47,7 +47,20 @@ export default function WarRoomPage({ me }) {
   const [timeHorizon, setTimeHorizon] = useState('Short-term (1-4 weeks)');
   const [countryFocus, setCountryFocus] = useState('GCC (All)');
   const [err, setErr] = useState('');
+  const [savedArticles, setSavedArticles] = useState([]);
+  const [selectedArticleIds, setSelectedArticleIds] = useState([]);
+  const [showArticlePicker, setShowArticlePicker] = useState(false);
   const scrollRef = useRef(null);
+
+  const loadSavedArticles = useCallback(async () => {
+    if (!me) return;
+    try {
+      const d = await api('/api/articles/saved/mine');
+      setSavedArticles(d.items ?? []);
+    } catch {}
+  }, [me]);
+
+  useEffect(() => { loadSavedArticles(); }, [loadSavedArticles]);
 
   async function startDebate() {
     if (!me) return;
@@ -61,7 +74,10 @@ export default function WarRoomPage({ me }) {
     try {
       const d = await api('/api/debate/start', {
         method: 'POST',
-        body: JSON.stringify({ marketBias, sectorFocus, timeHorizon, countryFocus }),
+        body: JSON.stringify({
+          marketBias, sectorFocus, timeHorizon, countryFocus,
+          articleIds: selectedArticleIds.length ? selectedArticleIds : undefined,
+        }),
       });
       setMessages(d.messages || []);
       setConsensus(d.consensusReport);
@@ -136,6 +152,83 @@ export default function WarRoomPage({ me }) {
             </div>
           ))}
         </div>
+
+        {/* Saved Articles Picker */}
+        {me && savedArticles.length > 0 && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowArticlePicker(!showArticlePicker)}
+              className="flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-500/30 transition-colors"
+            >
+              <BookmarkCheck size={14} className="text-cyan-400" />
+              <span className="text-xs font-bold text-white/60">
+                Saved Articles {selectedArticleIds.length > 0 && `(${selectedArticleIds.length} selected)`}
+              </span>
+              <ChevronDown size={12} className={`ml-auto text-white/30 transition-transform ${showArticlePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showArticlePicker && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 max-h-[200px] overflow-y-auto space-y-1.5 pr-1">
+                    {/* Select All / Clear */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        onClick={() => setSelectedArticleIds(savedArticles.map(a => a._id))}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold"
+                      >Select All</button>
+                      <span className="text-white/20">|</span>
+                      <button
+                        onClick={() => setSelectedArticleIds([])}
+                        className="text-[10px] text-white/40 hover:text-white/60 font-bold"
+                      >Clear</button>
+                    </div>
+
+                    {savedArticles.map(article => {
+                      const isSelected = selectedArticleIds.includes(article._id);
+                      return (
+                        <button
+                          key={article._id}
+                          onClick={() => {
+                            setSelectedArticleIds(prev =>
+                              isSelected
+                                ? prev.filter(id => id !== article._id)
+                                : [...prev, article._id]
+                            );
+                          }}
+                          className={`w-full flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-all ${
+                            isSelected
+                              ? 'bg-cyan-500/10 border-cyan-500/30'
+                              : 'bg-white/[0.02] border-white/5 hover:border-white/15'
+                          }`}
+                        >
+                          <div className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                            isSelected ? 'bg-cyan-500 border-cyan-500' : 'border-white/20'
+                          }`}>
+                            {isSelected && <Check size={10} className="text-white" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-[11px] font-semibold leading-tight truncate ${
+                              isSelected ? 'text-cyan-300' : 'text-white/60'
+                            }`}>{article.title}</p>
+                            <p className="text-[9px] text-white/30 mt-0.5 truncate">
+                              {article.source || 'Unknown'} • {article.tags?.join(', ') || ''}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* Agent Legend */}
