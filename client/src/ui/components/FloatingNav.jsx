@@ -130,73 +130,96 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
               </button>
 
               {profileOpen && me && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-white border border-slate-200 shadow-xl z-50 overflow-hidden animate-fade-in">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <p className="text-xs font-semibold text-slate-800">{me.name}</p>
-                    <p className="text-[10px] text-slate-400">{me.email}</p>
-                    <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-600">
-                      {me.role}
-                    </span>
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-50 overflow-hidden animate-fade-in origin-top-right">
+                  <div className="p-4 bg-gradient-to-br from-slate-50/80 to-slate-100/50 border-b border-slate-100/80">
+                    <div className="flex items-center gap-3">
+                      <GeoAvatar name={me.name} status="live" size={36} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-slate-800 leading-tight truncate">{me.name}</p>
+                        <p className="text-[11px] text-slate-400 font-medium truncate">{me.email}</p>
+                      </div>
+                    </div>
+                    {me.role && (
+                      <div className="mt-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-100/80 border border-violet-200/50 text-[9px] font-black text-violet-600 uppercase tracking-widest shadow-sm">
+                          {me.role}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {showProfile ? (
-                    <div className="px-4 py-3 space-y-2 border-b border-slate-100">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="p-3 space-y-2.5">
+                      <div className="flex items-center justify-between mb-2 px-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Edit Profile</span>
-                        <button onClick={() => setShowProfile(false)} className="text-slate-400 hover:text-slate-600">
-                          <X size={12} />
+                        <button onClick={() => setShowProfile(false)} className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                          <X size={14} />
                         </button>
                       </div>
                       <input value={editName} onChange={e => setEditName(e.target.value)}
                         placeholder="New name"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder-slate-300 outline-none focus:border-cyan-500" />
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-sm" />
                       <input type="password" value={editCurrPwd} onChange={e => setEditCurrPwd(e.target.value)}
                         placeholder="Current password"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder-slate-300 outline-none focus:border-cyan-500" />
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-sm" />
                       <input type="password" value={editPwd} onChange={e => setEditPwd(e.target.value)}
                         placeholder="New password (optional)"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-900 placeholder-slate-300 outline-none focus:border-cyan-500" />
-                      {editErr && <p className="text-[10px] text-rose-500">{editErr}</p>}
-                      {editMsg && <p className="text-[10px] text-emerald-500">{editMsg}</p>}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 placeholder-slate-400 outline-none focus:border-cyan-500 focus:bg-white transition-all shadow-sm" />
+                      {editErr && <p className="text-[10px] text-rose-500 font-medium px-1">{editErr}</p>}
+                      {editMsg && <p className="text-[10px] text-emerald-500 font-medium px-1">{editMsg}</p>}
                       <button onClick={saveProfile} disabled={editLoading}
-                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 text-white text-[11px] font-bold disabled:opacity-40">
+                        className="w-full py-2 mt-1 rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 text-white text-[11px] font-bold shadow-md shadow-cyan-500/20 disabled:opacity-40 hover:opacity-90 transition-opacity">
                         {editLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
                   ) : (
-                    <button onClick={() => { setEditName(me.name); setShowProfile(true); setEditMsg(''); setEditErr(''); }}
-                      className="w-full text-left px-4 py-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center gap-2 border-b border-slate-100">
-                      <Edit3 size={12} />Change Info
-                    </button>
+                    <div className="p-1.5 flex flex-col gap-0.5">
+                      <div className="px-2 py-1.5 mt-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Account</span>
+                      </div>
+                      
+                      <button onClick={() => { setEditName(me.name); setShowProfile(true); setEditMsg(''); setEditErr(''); }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all flex items-center gap-2.5">
+                        <Edit3 size={14} className="text-slate-400" />Profile Settings
+                      </button>
+
+                      {me.role === 'admin' && (
+                        <button onClick={() => { setShowAdmin(true); setProfileOpen(false); }}
+                          className="w-full text-left px-3 py-2 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:bg-violet-50 rounded-lg transition-all flex items-center gap-2.5">
+                          <Shield size={14} className="text-violet-400" />Admin Dashboard
+                        </button>
+                      )}
+
+                      <div className="h-px bg-slate-100 my-1 mx-2" />
+
+                      <div className="px-2 py-1.5 mt-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Navigation</span>
+                      </div>
+
+                      <button onClick={() => { setTab('saved-articles'); setProfileOpen(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2.5 ${
+                          tab === 'saved-articles' ? 'text-cyan-600 bg-cyan-50 shadow-sm border border-cyan-100/50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}>
+                        <BookmarkCheck size={14} className={tab === 'saved-articles' ? 'text-cyan-500' : 'text-slate-400'} />Saved Articles
+                      </button>
+
+                      {TABS.map(t => (
+                        <button key={t.id} onClick={() => { setTab(t.id); setProfileOpen(false); }}
+                          className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-2.5 ${
+                            tab === t.id ? 'text-slate-800 bg-slate-100 shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                          }`}>
+                          <t.icon size={14} className={tab === t.id ? 'text-slate-600' : 'text-slate-400'} />{t.label}
+                        </button>
+                      ))}
+
+                      <div className="h-px bg-slate-100 my-1 mx-2" />
+
+                      <button onClick={() => { onLogout(); setProfileOpen(false); }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all flex items-center gap-2.5 mt-0.5 mb-0.5">
+                        <LogOut size={14} className="text-rose-400" />Sign Out
+                      </button>
+                    </div>
                   )}
-
-                  {me.role === 'admin' && !showProfile && (
-                    <button onClick={() => { setShowAdmin(true); setProfileOpen(false); }}
-                      className="w-full text-left px-4 py-2 text-xs text-violet-600 hover:text-violet-700 hover:bg-violet-50 transition-colors flex items-center gap-2 border-b border-slate-100">
-                      <Shield size={12} />Admin Dashboard
-                    </button>
-                  )}
-
-                  {!showProfile && (
-                    <button onClick={() => { setTab('saved-articles'); setProfileOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 border-b border-slate-100 ${
-                        tab === 'saved-articles' ? 'text-cyan-600 bg-cyan-50' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                      }`}>
-                      <BookmarkCheck size={12} />Saved Articles
-                    </button>
-                  )}
-
-                  {TABS.map(t => (
-                    <button key={t.id} onClick={() => { setTab(t.id); setProfileOpen(false); }}
-                      className="w-full text-left px-4 py-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center gap-2">
-                      <t.icon size={12} />{t.label}
-                    </button>
-                  ))}
-
-                  <button onClick={() => { onLogout(); setProfileOpen(false); }}
-                    className="w-full text-left px-4 py-2 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 border-t border-slate-100">
-                    <LogOut size={12} />Sign Out
-                  </button>
                 </div>
               )}
             </div>
