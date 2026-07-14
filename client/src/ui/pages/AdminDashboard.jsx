@@ -279,10 +279,10 @@ export default function AdminDashboard({ me, onClose }) {
                               u.role === 'admin' ? 'bg-violet-50 text-violet-600' :
                               u.role === 'publisher' ? 'bg-emerald-50 text-emerald-600' :
                               'bg-slate-100 text-slate-500'
-                            }`}>{u.role}</span>
+                            }`}>{u.role === 'customer' ? 'user' : u.role}</span>
                             
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => { setEditingUserId(u._id); setEditRole(u.role); }} className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
+                            <div className="w-16 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => { setEditingUserId(u._id); setEditRole(u.role === 'customer' ? 'user' : u.role); }} className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
                                 <Edit2 size={12} />
                               </button>
                               {me?.id !== u._id && (
