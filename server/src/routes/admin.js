@@ -66,3 +66,30 @@ adminRouter.get('/activity', requireAuth, requireAdmin, async (_req, res) => {
   ]);
   return res.json({ simulations: sims, debates });
 });
+
+adminRouter.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'admin', 'publisher'].includes(role)) {
+      return res.status(400).json({ error: 'invalid_role' });
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('name email role createdAt');
+    if (!user) return res.status(404).json({ error: 'not_found' });
+    return res.json({ user });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (req.params.id === req.auth.sub) {
+      return res.status(400).json({ error: 'cannot_delete_self' });
+    }
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ error: 'not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});

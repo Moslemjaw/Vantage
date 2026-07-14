@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Shield, X, Users, Newspaper, Clock, Target, Brain, RefreshCw, Activity, BarChart3
+  Shield, X, Users, Newspaper, Clock, Target, Brain, RefreshCw, Activity, BarChart3, Trash2, Edit2, Check
 } from 'lucide-react';
 import { GeoAvatar, SkeletonCard } from '../components/SharedComponents.jsx';
 
@@ -33,6 +33,34 @@ export default function AdminDashboard({ me, onClose }) {
   const [syncMsg, setSyncMsg] = useState('');
   const [syncProgress, setSyncProgress] = useState(0);
   const [errMsg, setErrMsg] = useState('');
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editRole, setEditRole] = useState('user');
+
+  async function deleteUser(id) {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await api(`/api/admin/users/${id}`, { method: 'DELETE' });
+      setData(prev => ({ ...prev, recentUsers: prev.recentUsers.filter(u => u._id !== id) }));
+    } catch(e) {
+      alert(e.message);
+    }
+  }
+
+  async function saveRole(id) {
+    try {
+      const res = await api(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: editRole })
+      });
+      setData(prev => ({
+        ...prev,
+        recentUsers: prev.recentUsers.map(u => u._id === id ? res.user : u)
+      }));
+      setEditingUserId(null);
+    } catch(e) {
+      alert(e.message);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -217,7 +245,7 @@ export default function AdminDashboard({ me, onClose }) {
                 </h3>
                 <div className="space-y-2">
                   {(data.recentUsers ?? []).map(u => (
-                    <div key={u._id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                    <div key={u._id} className="group flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                       <div className="flex items-center gap-2">
                         <GeoAvatar name={u.name} size={24} />
                         <div>
@@ -225,11 +253,47 @@ export default function AdminDashboard({ me, onClose }) {
                           <p className="text-[10px] text-slate-400">{u.email}</p>
                         </div>
                       </div>
-                      <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        u.role === 'admin' ? 'bg-violet-50 text-violet-600' :
-                        u.role === 'publisher' ? 'bg-emerald-50 text-emerald-600' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>{u.role}</span>
+                      
+                      <div className="flex items-center gap-3">
+                        {editingUserId === u._id ? (
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={editRole}
+                              onChange={e => setEditRole(e.target.value)}
+                              className="text-xs border border-slate-200 rounded px-1.5 py-0.5 bg-white text-slate-700 focus:outline-none focus:border-violet-300"
+                            >
+                              <option value="user">User</option>
+                              <option value="publisher">Publisher</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            <button onClick={() => saveRole(u._id)} className="p-1 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
+                              <Check size={12} />
+                            </button>
+                            <button onClick={() => setEditingUserId(null)} className="p-1 rounded bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors">
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                              u.role === 'admin' ? 'bg-violet-50 text-violet-600' :
+                              u.role === 'publisher' ? 'bg-emerald-50 text-emerald-600' :
+                              'bg-slate-100 text-slate-500'
+                            }`}>{u.role}</span>
+                            
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => { setEditingUserId(u._id); setEditRole(u.role); }} className="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors">
+                                <Edit2 size={12} />
+                              </button>
+                              {me?.id !== u._id && (
+                                <button onClick={() => deleteUser(u._id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
