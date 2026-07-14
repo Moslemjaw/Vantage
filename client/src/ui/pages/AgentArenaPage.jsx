@@ -10,7 +10,7 @@ import {
 import { SentimentPill, ConfidenceGauge, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
-import { DebateSentimentFlow, ConvictionDonut, AgentScoreBarChart } from '../components/AnalysisCharts.jsx';
+import { DebateSentimentFlow, ConvictionDonut, AgentScoreBarChart, AgentRadarChart } from '../components/AnalysisCharts.jsx';
 
 
 async function api(path, opts = {}) {
@@ -346,41 +346,44 @@ function ConsensusVerdict({ consensus, messages, userPortfolio }) {
       )}
 
       {/* Visual Analysis Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Debate Sentiment Flow */}
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-cyan-500/5 pointer-events-none" />
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
-            <Activity size={12} />Debate Sentiment Flow
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <Activity size={12} className="text-violet-500" />Debate Sentiment Flow
           </h3>
-          <p className="text-[10px] text-slate-500 mb-4 relative z-10">Evolution of agent conviction across debate phases</p>
-          <div className="relative z-10">
-            <DebateSentimentFlow messages={messages} />
-          </div>
+          <p className="text-[10px] text-slate-400 mb-4">How each agent's conviction evolves across debate phases</p>
+          <DebateSentimentFlow messages={messages} />
         </div>
 
-        {/* Conviction & Scores */}
-        <div className="space-y-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 shadow-lg relative overflow-hidden flex flex-col justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-rose-500/5 pointer-events-none" />
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
-              <BarChart3 size={12} />Conviction Breakdown
+        {/* Conviction Breakdown */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <BarChart3 size={12} className="text-emerald-500" />Conviction Breakdown
+          </h3>
+          <p className="text-[10px] text-slate-400 mb-3">Distribution of agent stances with average confidence</p>
+          <ConvictionDonut messages={messages} />
+        </div>
+
+        {/* Agent Radar */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <Target size={12} className="text-cyan-500" />Agent Confidence Radar
+          </h3>
+          <p className="text-[10px] text-slate-400 mb-3">Compare agent conviction levels at a glance</p>
+          <AgentRadarChart messages={messages} />
+        </div>
+
+        {/* Top Agent Accuracy */}
+        {sortedScores.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Trophy size={12} className="text-amber-500" />Top Agent Accuracy
             </h3>
-            <div className="relative z-10">
-              <ConvictionDonut messages={messages} />
-            </div>
+            <p className="text-[10px] text-slate-400 mb-3">Ranked by prediction accuracy score out of 100</p>
+            <AgentScoreBarChart agentScores={sortedScores} />
           </div>
-
-          {/* Scoreboard */}
-          {sortedScores.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                <Trophy size={12} className="text-amber-500" />Top Agent Accuracy
-              </h3>
-              <AgentScoreBarChart agentScores={sortedScores} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Consensus Report Card */}
