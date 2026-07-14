@@ -22,7 +22,7 @@ export async function runDeepSeekJsonPrompt(prompt, maxTokens = 1300) {
     headers: deepseekHeaders(),
     body: JSON.stringify({
       model: 'deepseek-chat',
-      temperature: 0.2,
+      temperature: 0.45,
       max_tokens: maxTokens,
       messages: [
         { role: 'system', content: 'You output only strict JSON.' },

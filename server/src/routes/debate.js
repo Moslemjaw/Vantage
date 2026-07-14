@@ -197,12 +197,21 @@ ${history ? `PRIOR DEBATE MESSAGES:\n${history}` : '(You are the first to speak.
 
 Do NOT make generic statements. Every sentence must earn its place with evidence or logic.
 
+=== CONFIDENCE CALIBRATION (CRITICAL) ===
+Your confidence score MUST be unique and precisely calibrated. Do NOT default to 50 or 75.
+- 90-100: Overwhelming evidence, multiple confirming data points, very high conviction
+- 70-89: Strong evidence but some uncertainty remains
+- 50-69: Mixed signals, evidence supports both sides
+- 30-49: Weak evidence for your position, significant counterarguments exist
+- 10-29: Contrarian view with limited supporting evidence
+Your confidence MUST reflect YOUR specific agent's perspective and evidence quality. Two agents analyzing the same news SHOULD have DIFFERENT confidence levels based on how directly the news impacts their domain.
+
 Respond with ONLY valid JSON in this exact shape:
 {
   "analysis": "Your 6-12 sentence market analysis. Each claim must reference a specific article number and cite actual data points. Be thorough, specific, and institutional-grade.",
   "detailedLogic": "4-6 sentences explaining your complete reasoning chain: which specific facts (with article numbers and exact figures) led to your conclusion, the transmission mechanism, and what would invalidate your thesis.",
   "sentiment": "Bullish" or "Bearish" or "Neutral",
-  "confidence": 50 (number 0-100),
+  "confidence": <number 0-100, MUST be precisely calibrated per the guide above — do NOT use round numbers like 50 or 75>,
   "keyPoint": "One-sentence thesis backed by a specific data point and quantified outcome expectation",
   "catalysts": ["3-4 near-term catalysts with approximate dates/timeframes"],
   "riskFactors": ["2-3 key risks with probability estimates"],
@@ -544,11 +553,13 @@ ${transcript}
 The user is now asking you a follow-up question:
 "${question}"
 
+IMPORTANT: Calibrate your confidence score (0-100) based strictly on evidence strength. Never default to 75%. Use values that reflect your unique analytical stance.
+
 Respond with ONLY valid JSON:
 {
   "analysis": "Your detailed response to the user's question, referencing your earlier debate points and any relevant data. Be specific, cite evidence, and provide actionable insight.",
   "sentiment": "Bullish" or "Bearish" or "Neutral",
-  "confidence": 50
+  "confidence": <number 0-100, calibrated to evidence strength>
 }
 `.trim();
 
@@ -603,11 +614,14 @@ A user is directly CHALLENGING your position:
 "${challengeText}"
 
 Respond to this challenge. Defend your thesis using data, but acknowledge valid points.
+
+IMPORTANT: Calibrate your confidence score (0-100) precisely based on evidence strength. Do NOT default to 50 or 75.
+
 Respond with ONLY valid JSON:
 {
   "analysis": "Your 4-6 sentence rebuttal.",
   "sentiment": "Bullish" or "Bearish" or "Neutral",
-  "confidence": 50
+  "confidence": <number 0-100, calibrated to how well you can defend your position>
 }
 `.trim();
 
@@ -638,11 +652,14 @@ REBUTTAL BY ${challengedAgent.name}:
 "${rebuttalMsg.content}"
 
 You are the Risk Manager. Adjudicate this specific exchange. Who made the stronger case? What risks did they both miss?
+
+IMPORTANT: Calibrate your confidence score (0-100) precisely. Do NOT default to round numbers.
+
 Respond with ONLY valid JSON:
 {
   "analysis": "Your 4-5 sentence verdict on the user's challenge vs the agent's rebuttal.",
-  "sentiment": "Bearish",
-  "confidence": 80
+  "sentiment": "Bearish" or "Bullish" or "Neutral",
+  "confidence": <number 0-100, reflecting strength of your adjudication>
 }
 `.trim();
 
