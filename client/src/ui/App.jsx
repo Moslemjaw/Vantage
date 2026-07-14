@@ -14,6 +14,7 @@ import StockDashboard from './pages/StockDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import LeaderboardPage from './pages/LeaderboardPage.jsx';
 import PortfolioPage from './pages/PortfolioPage.jsx';
+import SavedArticlesPage from './pages/SavedArticlesPage.jsx';
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -84,6 +85,7 @@ export default function App() {
       case 'history': return <HistoryPage me={me} />;
       case 'leaderboard': return <LeaderboardPage me={me} onLogout={handleLogout} />;
       case 'portfolio': return <PortfolioPage me={me} onLogout={handleLogout} />;
+      case 'saved-articles': return <SavedArticlesPage me={me} />;
       default: return <StockDashboard me={me} />;
     }
   }, [tab, me]);

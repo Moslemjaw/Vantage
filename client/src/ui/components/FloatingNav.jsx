@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Newspaper, Brain, Target, History, Shield, Plus,
   ChevronDown, LogOut, Menu, Settings, User, Lock, Edit3,
-  Check, X, AlertTriangle, BarChart2, Briefcase
+  Check, X, AlertTriangle, BarChart2, Briefcase, BookmarkCheck
 } from 'lucide-react';
 import { GeoAvatar } from './SharedComponents.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
@@ -177,6 +177,15 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
                     </button>
                   )}
 
+                  {!showProfile && (
+                    <button onClick={() => { setTab('saved-articles'); setProfileOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center gap-2 border-b border-slate-100 ${
+                        tab === 'saved-articles' ? 'text-cyan-600 bg-cyan-50' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                      }`}>
+                      <BookmarkCheck size={12} />Saved Articles
+                    </button>
+                  )}
+
                   {TABS.map(t => (
                     <button key={t.id} onClick={() => { setTab(t.id); setProfileOpen(false); }}
                       className="w-full text-left px-4 py-2 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors flex items-center gap-2">
@@ -232,6 +241,12 @@ export default function FloatingNav({ me, tab, setTab, onLogout, setShowAuth, se
               {me && (
                 <>
                   <div className="h-px w-full bg-slate-100 my-2"></div>
+                  <button onClick={() => { setTab('saved-articles'); setMobileMenuOpen(false); }}
+                    className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 rounded-lg ${
+                      tab === 'saved-articles' ? 'text-cyan-600 bg-cyan-50' : 'text-slate-600 hover:bg-slate-50'
+                    }`}>
+                    <BookmarkCheck size={16} />Saved Articles
+                  </button>
                   {me.role === 'admin' && (
                     <button onClick={() => { setShowAdmin(true); setMobileMenuOpen(false); }}
                       className="w-full text-left px-4 py-3 text-sm font-medium text-violet-600 hover:bg-violet-50 transition-colors flex items-center gap-3 rounded-lg">
