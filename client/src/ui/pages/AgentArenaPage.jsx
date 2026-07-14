@@ -4,7 +4,8 @@ import {
   Brain, Zap, Lock, Target, Layers, ChevronRight, ChevronDown,
   TrendingUp, TrendingDown, Shield, AlertTriangle, Star,
   Trophy, MessageSquare, Eye, Clock, Activity, BarChart3,
-  ArrowRight, Minus, Sparkles, Users, Briefcase, Plus, BookmarkCheck, Check
+  ArrowRight, Minus, Sparkles, Users, Briefcase, Plus, BookmarkCheck, Check,
+  Settings, Scale, CheckCircle2
 } from 'lucide-react';
 import { SentimentPill, ConfidenceGauge, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
