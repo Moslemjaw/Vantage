@@ -144,3 +144,35 @@ export function KPICard({ label, value, delta, trend = 'up', icon: Icon, color =
     </div>
   );
 }
+
+export function MarkdownText({ text, className }) {
+  if (!text) return null;
+  // A simple markdown link parser: [Text](URL)
+  const parts = text.split(/(\[.*?\]\(.*?\))/g);
+  return (
+    <div className={className}>
+      {parts.map((part, i) => {
+        const match = part.match(/\[(.*?)\]\((.*?)\)/);
+        if (match) {
+          // Check if URL is literally 'None' (fallback)
+          if (match[2] === 'None' || !match[2]) {
+            return <span key={i} className="font-semibold text-cyan-500/80">{match[1]}</span>;
+          }
+          return (
+            <a 
+              key={i} 
+              href={match[2]} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors font-semibold"
+              onClick={e => e.stopPropagation()}
+            >
+              {match[1]}
+            </a>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </div>
+  );
+}

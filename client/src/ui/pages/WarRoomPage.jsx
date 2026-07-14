@@ -5,8 +5,10 @@ import {
   BarChart3, AlertTriangle, ChevronRight, FileText, Clock, Layers,
   Download, Target
 } from 'lucide-react';
-import { SentimentPill, ConfidenceGauge, SkeletonCard } from '../components/SharedComponents.jsx';
+import { SentimentPill, ConfidenceGauge, SkeletonCard, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
+import { DebateSentimentFlow, ConvictionDonut } from '../components/AnalysisCharts.jsx';
+
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -188,7 +190,7 @@ export default function WarRoomPage({ me }) {
                       <SentimentPill sentiment={msg.sentiment} />
                       <span className="text-[10px] font-mono text-white/30 ml-auto">{msg.confidence}% conf.</span>
                     </div>
-                    <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">{msg.content}</p>
+                    <MarkdownText text={msg.content} className="text-sm text-white/80 leading-relaxed" />
 
                     {/* Key Point highlight */}
                     {msg.keyPoint && (
@@ -261,21 +263,32 @@ export default function WarRoomPage({ me }) {
             <h4 className="text-base font-bold text-smoke mb-2">{consensus.title}</h4>
           )}
 
-          <p className="text-sm text-white/70 leading-relaxed mb-4">{consensus.summary}</p>
+          <MarkdownText text={consensus.summary} className="text-sm text-white/70 leading-relaxed mb-4" />
 
-          {/* Agent Consensus Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="kpi-card border border-cyan-500/20 text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Avg Confidence</p>
-              <p className="text-xl font-bold font-mono text-cyan-400">{avgConfidence}%</p>
+          {/* Agent Consensus Stats & Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white/[0.03] rounded-xl border border-white/5 p-4 relative overflow-hidden">
+              <h5 className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2 flex items-center gap-1.5 z-10 relative">
+                <Activity size={12} className="text-cyan-400" />Debate Sentiment Flow
+              </h5>
+              <div className="relative z-10">
+                <DebateSentimentFlow messages={messages} />
+              </div>
             </div>
-            <div className="kpi-card border border-emerald-500/20 text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Bullish Votes</p>
-              <p className="text-xl font-bold font-mono text-emerald-400">{bullCount}/{messages.length}</p>
-            </div>
-            <div className="kpi-card border border-rose-500/20 text-center">
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Bearish Votes</p>
-              <p className="text-xl font-bold font-mono text-rose-400">{bearCount}/{messages.length}</p>
+            
+            <div className="bg-white/[0.03] rounded-xl border border-white/5 p-4 relative overflow-hidden flex flex-col justify-center">
+              <div className="flex items-center justify-between mb-2 z-10 relative">
+                <h5 className="text-[10px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1.5">
+                  <BarChart3 size={12} className="text-violet-400" />Conviction Breakdown
+                </h5>
+                <div className="flex gap-2">
+                  <span className="text-[10px] font-mono text-emerald-400">{bullCount} Bull</span>
+                  <span className="text-[10px] font-mono text-rose-400">{bearCount} Bear</span>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <ConvictionDonut messages={messages} />
+              </div>
             </div>
           </div>
 
@@ -285,7 +298,7 @@ export default function WarRoomPage({ me }) {
               <ul className="space-y-1.5">
                 {consensus.keyTakeaways.map((t, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-white/60">
-                    <ChevronRight size={12} className="text-cyan-400 shrink-0 mt-0.5" />{t}
+                    <MarkdownText text={t} />
                   </li>
                 ))}
               </ul>
@@ -318,28 +331,34 @@ export default function WarRoomPage({ me }) {
               <h5 className="text-[10px] font-bold text-cyan-400/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Target size={10} /> Top Stock Picks
               </h5>
-              <ul className="space-y-1.5">
+              <ul className="space-y-1.5 mb-2">
                 {consensus.topStockPicks.map((pick, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-white/60">
                     <ChevronRight size={12} className="text-cyan-400 shrink-0 mt-0.5" />
-                    <span>{pick}</span>
+                    <MarkdownText text={pick} />
                   </li>
                 ))}
               </ul>
+              {consensus.stockSelectionMethodology && (
+                <div className="mt-3 pt-3 border-t border-cyan-500/20">
+                  <h6 className="text-[9px] font-bold text-cyan-500/50 uppercase tracking-wider mb-1.5">Selection Methodology</h6>
+                  <MarkdownText text={consensus.stockSelectionMethodology} className="text-xs text-white/50 leading-relaxed" />
+                </div>
+              )}
             </div>
           )}
 
           {consensus.actionableInsights && (
             <div className="bg-white/[0.03] rounded-xl p-4 border border-white/5">
               <h5 className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-wider mb-1.5">Actionable Insights</h5>
-              <p className="text-xs text-white/60 leading-relaxed">{consensus.actionableInsights}</p>
+              <MarkdownText text={consensus.actionableInsights} className="text-xs text-white/60 leading-relaxed" />
             </div>
           )}
 
           {consensus.riskWarnings && (
             <div className="mt-3 bg-rose-500/5 rounded-xl p-4 border border-rose-500/10">
               <h5 className="text-[10px] font-bold text-rose-400/70 uppercase tracking-wider mb-1.5">⚠ Risk Warnings</h5>
-              <p className="text-xs text-white/50 leading-relaxed">{consensus.riskWarnings}</p>
+              <MarkdownText text={consensus.riskWarnings} className="text-xs text-white/50 leading-relaxed" />
             </div>
           )}
 

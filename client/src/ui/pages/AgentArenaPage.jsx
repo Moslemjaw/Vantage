@@ -6,9 +6,11 @@ import {
   Trophy, MessageSquare, Eye, Clock, Activity, BarChart3,
   ArrowRight, Minus, Sparkles, Users, Briefcase, Plus
 } from 'lucide-react';
-import { SentimentPill, ConfidenceGauge } from '../components/SharedComponents.jsx';
+import { SentimentPill, ConfidenceGauge, MarkdownText } from '../components/SharedComponents.jsx';
 import { ReportDownloader } from '../components/ReportDownloader.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { DebateSentimentFlow, ConvictionDonut, AgentScoreBarChart } from '../components/AnalysisCharts.jsx';
+
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -161,7 +163,7 @@ function AgentCard({ msg, index, isWinner, score }) {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <p className="text-xs text-slate-600 leading-relaxed mb-3 whitespace-pre-line">{msg.content}</p>
+              <MarkdownText text={msg.content} className="text-xs text-slate-600 leading-relaxed mb-3" />
 
               {msg.catalysts?.length > 0 && (
                 <div className="mb-2">
@@ -257,7 +259,7 @@ function DebateTimeline({ messages, challengeInputs, setChallengeInputs, challen
                 </div>
               )}
 
-              <p className="text-xs text-slate-600 leading-relaxed line-clamp-4 whitespace-pre-wrap">{msg.content}</p>
+              <MarkdownText text={msg.content} className="text-xs text-slate-600 leading-relaxed" />
 
               {/* Challenge UI */}
               {!msg.agentName.includes('(Verdict)') && (
@@ -266,11 +268,11 @@ function DebateTimeline({ messages, challengeInputs, setChallengeInputs, challen
                     <div className="space-y-3">
                       <div className="p-3 bg-violet-50 rounded-xl border border-violet-100">
                         <p className="text-[10px] font-bold text-violet-600 uppercase mb-1">Rebuttal</p>
-                        <p className="text-xs text-slate-700 whitespace-pre-wrap">{challengeResponses[i].rebuttal.content}</p>
+                        <MarkdownText text={challengeResponses[i].rebuttal.content} className="text-xs text-slate-700" />
                       </div>
                       <div className="p-3 bg-rose-50 rounded-xl border border-rose-100">
                         <p className="text-[10px] font-bold text-rose-600 uppercase mb-1">Risk Manager Verdict</p>
-                        <p className="text-xs text-slate-700 whitespace-pre-wrap">{challengeResponses[i].adjudication.content}</p>
+                        <MarkdownText text={challengeResponses[i].adjudication.content} className="text-xs text-slate-700" />
                       </div>
                     </div>
                   ) : (
@@ -335,50 +337,50 @@ function ConsensusVerdict({ consensus, messages, userPortfolio }) {
               <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-0.5">Most Accurate Analyst</p>
               <h3 className="text-lg font-bold text-amber-800">{consensus.winnerAgent}</h3>
               {consensus.winnerReasoning && (
-                <p className="text-xs text-amber-600 mt-1 leading-relaxed">{consensus.winnerReasoning}</p>
+                <MarkdownText text={consensus.winnerReasoning} className="text-xs text-amber-600 mt-1" />
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Scoreboard */}
-      {sortedScores.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-            <BarChart3 size={12} />Agent Scoreboard
+      {/* Visual Analysis Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Debate Sentiment Flow */}
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-cyan-500/5 pointer-events-none" />
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
+            <Activity size={12} />Debate Sentiment Flow
           </h3>
-          <div className="space-y-3">
-            {sortedScores.map((s, i) => {
-              const theme = getTheme(s.agentName);
-              const isWinner = s.agentName === consensus.winnerAgent;
-              return (
-                <div key={s.agentName} className="flex items-center gap-3">
-                  <span className={`text-xs font-mono font-bold w-5 ${i === 0 ? 'text-amber-500' : 'text-slate-300'}`}>#{i + 1}</span>
-                  <div className={`w-7 h-7 rounded-lg ${theme.bg} border ${theme.border} flex items-center justify-center shrink-0`}>
-                    <theme.icon size={12} style={{ color: theme.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-slate-700 truncate">{s.agentName}</span>
-                      {isWinner && <Trophy size={10} className="text-amber-500 shrink-0" />}
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full bg-gradient-to-r ${theme.gradFrom} ${theme.gradTo}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${s.score || 0}%` }}
-                        transition={{ delay: i * 0.1, duration: 0.6 }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-sm font-mono font-bold text-slate-700 w-10 text-right">{s.score}</span>
-                </div>
-              );
-            })}
+          <p className="text-[10px] text-slate-500 mb-4 relative z-10">Evolution of agent conviction across debate phases</p>
+          <div className="relative z-10">
+            <DebateSentimentFlow messages={messages} />
           </div>
         </div>
-      )}
+
+        {/* Conviction & Scores */}
+        <div className="space-y-4">
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 shadow-lg relative overflow-hidden flex flex-col justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-rose-500/5 pointer-events-none" />
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
+              <BarChart3 size={12} />Conviction Breakdown
+            </h3>
+            <div className="relative z-10">
+              <ConvictionDonut messages={messages} />
+            </div>
+          </div>
+
+          {/* Scoreboard */}
+          {sortedScores.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <Trophy size={12} className="text-amber-500" />Top Agent Accuracy
+              </h3>
+              <AgentScoreBarChart agentScores={sortedScores} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Consensus Report Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
@@ -419,7 +421,7 @@ function ConsensusVerdict({ consensus, messages, userPortfolio }) {
         </div>
 
         {/* Summary */}
-        <p className="text-sm text-slate-700 leading-relaxed mb-5">{consensus.summary}</p>
+        <MarkdownText text={consensus.summary} className="text-sm text-slate-700 leading-relaxed mb-6" />
 
         {/* Key Takeaways */}
         {consensus.keyTakeaways?.length > 0 && (

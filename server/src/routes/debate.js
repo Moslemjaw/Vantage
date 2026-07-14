@@ -188,7 +188,7 @@ ${history ? `PRIOR DEBATE MESSAGES:\n${history}` : '(You are the first to speak.
 === RESPONSE REQUIREMENTS ===
 
 **EVIDENCE STANDARD (MANDATORY):** Your response will be REJECTED if it fails these checks:
-1. Cite AT LEAST 3 specific news articles by number (e.g. "Article #3 reports that...")
+1. Cite AT LEAST 3 specific news articles by using their actual titles. You MUST format citations as Markdown links using the provided URL, like this: [Article Title](URL). If no URL is provided, just use the title.
 2. Include AT LEAST 2 exact figures from the data (prices, percentages, dates, amounts)
 3. Explain the causal chain: Specific Event \u2192 Transmission Mechanism \u2192 Market Impact \u2192 Your Conclusion
 4. If live stock data is available, reference specific tickers with their current price and change %
@@ -240,7 +240,7 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
     News.find(query)
       .sort({ publishedAt: -1 })
       .limit(50)
-      .select('tag source headline body publishedAt sentimentScore sentimentLabel aiAnalysis aiSectors affectedStocks analyzed'),
+      .select('tag source headline body publishedAt sentimentScore sentimentLabel aiAnalysis aiSectors affectedStocks analyzed url'),
     fetchAlphaVantageData(),
     fetchBulkQuotes(), // Fetch live stock quotes
     Portfolio.findOne({ userId: req.auth.sub }),
@@ -253,12 +253,12 @@ debateRouter.post('/start', requireAuth, async (req, res) => {
 
   const ragExtracts = extractRelevantParagraphs(newsItems, newsItems[0]?.headline || '', sectorFocus);
 
-  let newsContext = newsItems.map((n, i) => {
+  let newsContext = newsItems.map((n) => {
     const when = n.publishedAt ? new Date(n.publishedAt).toISOString().slice(0, 10) : '';
     const aiNote = n.analyzed && n.aiAnalysis
       ? `\n   [AI: ${n.sentimentLabel} (${n.sentimentScore}) — ${n.aiAnalysis}${n.aiSectors?.length ? ` | Sectors: ${n.aiSectors.join(', ')}` : ''}]`
       : '';
-    return `(${i + 1}) [${when}] [${n.source}] ${n.headline}\n${(n.body || '').slice(0, 400)}${aiNote}`;
+    return `[${when}] [${n.source}] TITLE: "${n.headline}" URL: ${n.url || 'None'}\n${(n.body || '').slice(0, 400)}${aiNote}`;
   }).join('\n\n');
 
   if (ragExtracts) {
@@ -419,10 +419,10 @@ ${messages.map(m => `[${m.agentName} (${m.sentiment}, ${m.confidence}% confidenc
 Generate a consensus report as ONLY valid JSON:
 {
   "title": "Brief market outlook title",
-  "summary": "4-6 sentence executive summary synthesizing all viewpoints with specific data citations",
+  "summary": "4-6 sentence executive summary synthesizing all viewpoints. You MUST cite news articles using Markdown links with their actual titles and URLs, e.g., [Title](URL).",
   "overallSentiment": "Bullish" or "Bearish" or "Neutral" or "Mixed",
   "marketImpactRating": 5 (number 1-10, how significant is this for markets),
-  "keyTakeaways": ["4-6 bullet points with specific data references"],
+  "keyTakeaways": ["4-6 bullet points with specific data references. Use Markdown links for article citations."],
   "actionableInsights": "3-4 sentences of actionable guidance with specific sectors/stocks to watch",
   "riskWarnings": "2-3 key risk warnings with transmission mechanisms",
   "sectorOutlook": {
@@ -430,7 +430,8 @@ Generate a consensus report as ONLY valid JSON:
     "underweight": ["sectors to underweight with reasoning"],
     "watch": ["sectors to watch for catalysts"]
   },
-  "topStockPicks": ["3-5 specific stock tickers with investment rationale based on debate"],
+  "topStockPicks": ["3-5 specific stock tickers with brief investment rationale"],
+  "stockSelectionMethodology": "A 3-5 sentence explanation of how these stocks were selected. Detail the exact criteria used (e.g., fundamentals, sentiment, valuation multiples), why these metrics were prioritized, and why these specific stocks were chosen over alternatives based on the debate.",
   "timelineEvents": ["3-5 upcoming events/catalysts with approximate dates"],
   "agentScores": [
     {"agentName": "Agent Name", "score": 85, "reasoning": "Brief explanation of why this score"},
