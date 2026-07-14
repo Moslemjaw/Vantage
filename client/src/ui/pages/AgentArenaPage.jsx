@@ -855,242 +855,272 @@ export default function AgentArenaPage({ me }) {
           </button>
         </div>
 
-        {/* Configuration Grid */}
-        <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Unified Configuration Panel */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8 overflow-hidden">
+          
+          {/* Top Section: Strategy Grid */}
+          <div className="bg-slate-50/80 p-5 md:p-6 border-b border-slate-100/80">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings size={14} className="text-slate-400" />
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Analysis Parameters</h3>
+            </div>
             
-            {/* Sector Focus */}
-            <div className="lg:col-span-4">
-              <div className="relative">
-                <select
-                  value={sector}
-                  onChange={e => setSector(e.target.value)}
-                  className="w-full h-[46px] bg-white border border-slate-200 rounded-xl pl-4 pr-10 text-sm font-semibold text-slate-800 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all cursor-pointer appearance-none shadow-sm hover:border-slate-300"
-                >
-                  {SECTORS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <ChevronDown size={16} />
-                </div>
-              </div>
-              {sector !== 'All Sectors' && (
-                <p className="text-[10px] text-slate-500 mt-2 pl-1 font-medium leading-relaxed">
-                  {SECTORS.find(s => s.id === sector)?.desc}
-                </p>
-              )}
-            </div>
-
-            {/* Time Horizon */}
-            <div className="lg:col-span-4">
-              <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
-                {TIME_HORIZONS.map(th => (
-                  <button
-                    key={th.id}
-                    onClick={() => setTimeHorizon(th.id)}
-                    className={`flex-1 flex flex-col items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-200 ${
-                      timeHorizon === th.id
-                        ? 'bg-white text-violet-700 shadow-sm border border-slate-200/50'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
-                    }`}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Sector Focus */}
+              <div className="lg:col-span-4">
+                <div className="relative">
+                  <select
+                    value={sector}
+                    onChange={e => setSector(e.target.value)}
+                    className="w-full h-[46px] bg-white border border-slate-200 rounded-xl pl-4 pr-10 text-sm font-semibold text-slate-800 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all cursor-pointer appearance-none shadow-sm hover:border-slate-300"
                   >
-                    <span className="tracking-wide">{th.label}</span>
-                    <span className={`text-[8px] font-medium leading-none mt-0.5 ${timeHorizon === th.id ? 'text-violet-400' : 'text-slate-400'}`}>{th.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Market Bias */}
-            <div className="lg:col-span-4">
-              <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
-                {MARKET_BIASES.map(mb => (
-                  <button
-                    key={mb.id}
-                    onClick={() => setMarketBias(mb.id)}
-                    className={`flex-1 flex flex-col items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-200 ${
-                      marketBias === mb.id
-                        ? mb.id === 'Bullish' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/50'
-                          : mb.id === 'Bearish' ? 'bg-white text-rose-600 shadow-sm border border-slate-200/50'
-                          : 'bg-white text-slate-700 shadow-sm border border-slate-200/50'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 tracking-wide">
-                      {mb.id === 'Bullish' && <TrendingUp size={12} className={marketBias === mb.id ? 'text-emerald-500' : ''} />}
-                      {mb.id === 'Neutral' && <Minus size={12} />}
-                      {mb.id === 'Bearish' && <TrendingDown size={12} className={marketBias === mb.id ? 'text-rose-500' : ''} />}
-                      {mb.label}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Agent Selection */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
-          {ALL_AGENTS.map(agent => {
-            const isOn = enabledAgents.includes(agent.name);
-            const theme = getTheme(agent.name);
-            return (
-              <button
-                key={agent.name}
-                onClick={() => {
-                  setEnabledAgents(prev =>
-                    isOn ? prev.filter(n => n !== agent.name) : [...prev, agent.name]
-                  );
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-200 ${
-                  isOn
-                    ? `${theme.bg} ${theme.border} ${theme.text} shadow-sm`
-                    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
-                }`}
-              >
-                <span>{agent.icon}</span>
-                <span>{agent.name}</span>
-              </button>
-            );
-          })}
-          
-          <button
-            onClick={() => setShowCreateAgentModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border border-dashed border-violet-300 text-violet-600 hover:bg-violet-50 transition-all duration-200"
-          >
-            <Plus size={12} />
-            Custom
-          </button>
-        </div>
-
-        {/* Agent Weights Panel */}
-        <div className="pt-3 border-t border-slate-100">
-          <button onClick={() => setShowWeights(!showWeights)} className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors mb-2">
-            <ChevronDown size={14} className={`transition-transform duration-200 ${showWeights ? 'rotate-180' : ''}`} />
-            Agent Impact Weights
-            <span className="text-[9px] text-slate-400 font-normal ml-1">(adjust how much each agent influences the final report)</span>
-          </button>
-          
-          <AnimatePresence>
-            {showWeights && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5 mt-2 bg-gradient-to-br from-slate-50 to-violet-50/30 rounded-xl border border-slate-200">
-                  {Object.keys(agentWeights).map(name => {
-                    const theme = getTheme(name);
-                    const w = agentWeights[name];
-                    return (
-                      <div key={name} className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.color }} />
-                            <span className={`text-[11px] font-bold ${theme.text}`}>{name}</span>
-                          </div>
-                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shadow-sm ${
-                            w >= 7 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : w <= 3 ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : 'bg-white text-slate-600 border-slate-200'
-                          }`}>{w}/10</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1" max="10"
-                          value={w}
-                          onChange={e => setAgentWeights({ ...agentWeights, [name]: parseInt(e.target.value) })}
-                          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-violet-500"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Saved Articles Picker */}
-        {me && savedArticles.length > 0 && (
-          <div className="pt-3 border-t border-slate-100">
-            <button
-              onClick={() => setShowArticlePicker(!showArticlePicker)}
-              className="flex items-center gap-2 w-full text-left mb-2"
-            >
-              <BookmarkCheck size={14} className="text-violet-500" />
-              <span className="text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors">
-                Saved Articles {selectedArticleIds.length > 0 && <span className="text-violet-600">({selectedArticleIds.length} selected)</span>}
-              </span>
-              <span className="text-[9px] text-slate-400 font-normal ml-1">(choose articles to focus the analysis on)</span>
-              <ChevronDown size={14} className={`ml-auto text-slate-400 transition-transform duration-200 ${showArticlePicker ? 'rotate-180' : ''}`} />
-            </button>
-
-            <AnimatePresence>
-              {showArticlePicker && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-4 bg-gradient-to-br from-slate-50 to-violet-50/30 rounded-xl border border-slate-200">
-                    {/* Select All / Clear */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <button
-                        onClick={() => setSelectedArticleIds(savedArticles.map(a => a._id))}
-                        className="text-[10px] text-violet-600 hover:text-violet-500 font-bold"
-                      >Select All</button>
-                      <span className="text-slate-300">|</span>
-                      <button
-                        onClick={() => setSelectedArticleIds([])}
-                        className="text-[10px] text-slate-400 hover:text-slate-600 font-bold"
-                      >Clear</button>
-                    </div>
-
-                    <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
-                      {savedArticles.map(article => {
-                        const isSelected = selectedArticleIds.includes(article._id);
-                        return (
-                          <button
-                            key={article._id}
-                            onClick={() => {
-                              setSelectedArticleIds(prev =>
-                                isSelected
-                                  ? prev.filter(id => id !== article._id)
-                                  : [...prev, article._id]
-                              );
-                            }}
-                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-all ${
-                              isSelected
-                                ? 'bg-violet-50 border-violet-200'
-                                : 'bg-white border-slate-100 hover:border-slate-200'
-                            }`}
-                          >
-                            <div className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
-                              isSelected ? 'bg-violet-500 border-violet-500' : 'border-slate-300'
-                            }`}>
-                              {isSelected && <Check size={10} className="text-white" />}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className={`text-[11px] font-semibold leading-tight truncate ${
-                                isSelected ? 'text-violet-700' : 'text-slate-600'
-                              }`}>{article.title}</p>
-                              <p className="text-[9px] text-slate-400 mt-0.5 truncate">
-                                {article.source || 'Unknown'} • {article.tags?.join(', ') || ''}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {SECTORS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <ChevronDown size={16} />
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+                {sector !== 'All Sectors' && (
+                  <p className="text-[10px] text-slate-500 mt-2 pl-1 font-medium leading-relaxed">
+                    {SECTORS.find(s => s.id === sector)?.desc}
+                  </p>
+                )}
+              </div>
+
+              {/* Time Horizon */}
+              <div className="lg:col-span-4">
+                <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
+                  {TIME_HORIZONS.map(th => (
+                    <button
+                      key={th.id}
+                      onClick={() => setTimeHorizon(th.id)}
+                      className={`flex-1 flex flex-col items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-200 ${
+                        timeHorizon === th.id
+                          ? 'bg-white text-violet-700 shadow-sm border border-slate-200/50'
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
+                      }`}
+                    >
+                      <span className="tracking-wide">{th.label}</span>
+                      <span className={`text-[8px] font-medium leading-none mt-0.5 ${timeHorizon === th.id ? 'text-violet-400' : 'text-slate-400'}`}>{th.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Market Bias */}
+              <div className="lg:col-span-4">
+                <div className="flex bg-slate-200/50 p-1 rounded-xl h-[46px]">
+                  {MARKET_BIASES.map(mb => (
+                    <button
+                      key={mb.id}
+                      onClick={() => setMarketBias(mb.id)}
+                      className={`flex-1 flex flex-col items-center justify-center rounded-lg text-[11px] font-bold transition-all duration-200 ${
+                        marketBias === mb.id
+                          ? mb.id === 'Bullish' ? 'bg-white text-emerald-600 shadow-sm border border-slate-200/50'
+                            : mb.id === 'Bearish' ? 'bg-white text-rose-600 shadow-sm border border-slate-200/50'
+                            : 'bg-white text-slate-700 shadow-sm border border-slate-200/50'
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 tracking-wide">
+                        {mb.id === 'Bullish' && <TrendingUp size={12} className={marketBias === mb.id ? 'text-emerald-500' : ''} />}
+                        {mb.id === 'Neutral' && <Minus size={12} />}
+                        {mb.id === 'Bearish' && <TrendingDown size={12} className={marketBias === mb.id ? 'text-rose-500' : ''} />}
+                        {mb.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Middle Section: Agent Selection */}
+          <div className="p-5 md:p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Agent Roster</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Select the specialized AI agents to participate in the debate.</p>
+              </div>
+              <button
+                onClick={() => setShowCreateAgentModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-violet-50 text-violet-600 hover:bg-violet-100 hover:scale-105 transition-all duration-200"
+              >
+                <Plus size={14} />
+                Custom
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap gap-2.5">
+              {ALL_AGENTS.map(agent => {
+                const isOn = enabledAgents.includes(agent.name);
+                const theme = getTheme(agent.name);
+                return (
+                  <button
+                    key={agent.name}
+                    onClick={() => {
+                      setEnabledAgents(prev =>
+                        isOn ? prev.filter(n => n !== agent.name) : [...prev, agent.name]
+                      );
+                    }}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-bold border transition-all duration-200 ${
+                      isOn
+                        ? `${theme.bg} ${theme.border} ${theme.text} shadow-sm scale-[1.02]`
+                        : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={isOn ? theme.text : 'text-slate-400'}>{agent.icon}</span>
+                    <span>{agent.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Sections: Collapsibles */}
+          <div className="bg-slate-50/50 flex flex-col">
+            {/* Agent Weights */}
+            <div className="border-t border-slate-100">
+              <button onClick={() => setShowWeights(!showWeights)} className="flex items-center justify-between w-full p-4 md:px-6 group transition-colors hover:bg-slate-50">
+                <div className="flex items-center gap-2.5">
+                  <Scale size={14} className="text-slate-400 group-hover:text-violet-500 transition-colors" />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800 transition-colors">Agent Impact Weights</span>
+                  <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">(adjust influence on final report)</span>
+                </div>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${showWeights ? 'rotate-180' : ''}`} />
+              </button>
+              
+              <AnimatePresence>
+                {showWeights && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 md:px-6 pb-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-5 bg-white rounded-xl border border-slate-200/60 shadow-sm">
+                        {Object.keys(agentWeights).map(name => {
+                          const theme = getTheme(name);
+                          const w = agentWeights[name];
+                          return (
+                            <div key={name} className="flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: theme.color }} />
+                                  <span className={`text-[11px] font-bold ${theme.text}`}>{name}</span>
+                                </div>
+                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-sm ${
+                                  w >= 7 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : w <= 3 ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                    : 'bg-white text-slate-600 border-slate-200'
+                                }`}>{w}/10</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1" max="10"
+                                value={w}
+                                onChange={e => setAgentWeights({ ...agentWeights, [name]: parseInt(e.target.value) })}
+                                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-violet-500 hover:accent-violet-600 transition-colors"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Saved Articles Picker */}
+            {me && savedArticles.length > 0 && (
+              <div className="border-t border-slate-100">
+                <button
+                  onClick={() => setShowArticlePicker(!showArticlePicker)}
+                  className="flex items-center justify-between w-full p-4 md:px-6 group transition-colors hover:bg-slate-50"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <BookmarkCheck size={14} className="text-violet-500 group-hover:text-violet-600 transition-colors" />
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800 transition-colors">
+                      Saved Articles {selectedArticleIds.length > 0 && <span className="text-violet-600 ml-1">({selectedArticleIds.length} selected)</span>}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">(choose articles to focus the analysis on)</span>
+                  </div>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${showArticlePicker ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {showArticlePicker && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 md:px-6 pb-5">
+                        <div className="p-4 bg-white rounded-xl border border-slate-200/60 shadow-sm">
+                          {/* Select All / Clear */}
+                          <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Available Articles</span>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => setSelectedArticleIds(savedArticles.map(a => a._id))}
+                                className="text-[10px] text-violet-600 hover:text-violet-700 font-bold transition-colors"
+                              >Select All</button>
+                              <span className="text-slate-200">|</span>
+                              <button
+                                onClick={() => setSelectedArticleIds([])}
+                                className="text-[10px] text-slate-400 hover:text-slate-600 font-bold transition-colors"
+                              >Clear Selection</button>
+                            </div>
+                          </div>
+
+                          <div className="max-h-[220px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                            {savedArticles.map(article => {
+                              const isSelected = selectedArticleIds.includes(article._id);
+                              return (
+                                <button
+                                  key={article._id}
+                                  onClick={() => {
+                                    setSelectedArticleIds(prev =>
+                                      isSelected
+                                        ? prev.filter(id => id !== article._id)
+                                        : [...prev, article._id]
+                                    );
+                                  }}
+                                  className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all duration-200 ${
+                                    isSelected
+                                      ? 'bg-violet-50/50 border-violet-200 shadow-sm'
+                                      : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 hover:bg-white'
+                                  }`}
+                                >
+                                  <div className={`mt-0.5 w-4 h-4 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
+                                    isSelected ? 'bg-violet-500 border-violet-500 shadow-sm shadow-violet-500/20' : 'border-slate-300 bg-white'
+                                  }`}>
+                                    {isSelected && <Check size={10} className="text-white" />}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className={`text-[12px] font-bold leading-tight mb-1 ${
+                                      isSelected ? 'text-violet-900' : 'text-slate-700'
+                                    }`}>{article.title}</p>
+                                    <p className="text-[10px] text-slate-500 truncate font-medium">
+                                      {article.source || 'Unknown'} <span className="mx-1 text-slate-300">•</span> {article.tags?.join(', ') || ''}
+                                    </p>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
 
         {!me && (
           <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
